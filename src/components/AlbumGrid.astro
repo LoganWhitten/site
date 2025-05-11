@@ -1,0 +1,23 @@
+---
+import type { CollectionEntry } from "astro:content";
+import AlbumCard from "./AlbumCard.astro";
+
+type Props = {
+  albums: CollectionEntry<"albums">[];
+};
+
+const { albums } = Astro.props;
+---
+
+<section>
+  {albums.map((album) => <AlbumCard album={album} />)}
+</section>
+
+<style>
+  section {
+    display: flex;
+    width: 100%;
+    gap: 2rem;
+    flex-direction: column;
+  }
+</style>

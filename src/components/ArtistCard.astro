@@ -1,0 +1,28 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+type Props = {
+  artist: CollectionEntry<"artists">;
+};
+
+const { artist } = Astro.props;
+---
+
+<a
+  href={`/${artist.id}`}
+  class="artist"
+  style={`--image: url('${artist.data.image.src}');`}
+  data-stagename={artist.data.stage_name}
+  data-name={artist.data.name}
+  data-genre={artist.data.genre}
+  data-astro-prefetch
+  aria-label={artist.data.name}></a>
+
+<style>
+  a {
+    background-image: var(--image);
+    background-size: cover;
+    background-position: 50% 0%;
+    aspect-ratio: 0.8;
+  }
+</style>

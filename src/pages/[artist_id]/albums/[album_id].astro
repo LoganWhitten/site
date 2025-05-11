@@ -1,0 +1,84 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getCollection, render, getEntry } from "astro:content";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Separator from "../../../components/Separator.astro";
+
+export const getStaticPaths = async () => {
+  // Fetch all albums from the 'albums' collection
+  const albums = await getCollection("albums");
+
+  /*
+  // Filter albums to ensure each has valid artist data, then map to generate paths
+  const paths = albums.filter(album => album.data.artist && album.data.artist.id) // Ensure the album has a valid artist reference
+  .map((album) => {
+    return {
+      params: {
+        artist_id: album.data.artist.id, // Include artist ID in the route parameters
+        album_id: album.id,             // Include album ID in the route parameters
+      },
+      props: {
+        artist: album.data.artist,      // Pass the artist data as props
+        album                           // Pass the album data as props
+      },
+    };
+  });
+  */
+
+  const paths = await Promise.all(
+    albums.map(async (album) => {
+      const artist = await getEntry("artists", album.data.artist.id); // Fetch artist by ID
+      return {
+        params: {
+          artist_id: album.data.artist.id, // Include artist ID in route parameters
+          album_id: album.id, // Include album ID in route parameters
+        },
+        props: {
+          artist, // Pass full artist data as props
+          album, // Pass album data as props
+        },
+      };
+    }),
+  );
+
+  // Return the generated paths for static page generation
+  return paths;
+};
+
+type Props = {
+  artist: CollectionEntry<"artists">; // The artist associated with the album
+  album: CollectionEntry<"albums">; // The album being rendered
+};
+
+const { artist, album } = Astro.props; // Extract artist and album data from props
+
+// Render the content of the album (e.g., markdown or MDX content)
+const { Content } = await render(album);
+---
+
+<BaseLayout title={album.data.name}>
+  <section>
+    <header class="title-header">
+      <h2>
+        {album.data.name}
+        <span class="faded">by {artist.data.stage_name}</span>
+      </h2>
+      <div><a class="back" href={`/${artist.id}`}>Back to artist</a></div>
+    </header>
+    <Separator />
+    <div class="content-wrap">
+      <img
+        class="image fade-in"
+        src={album.data.image.src}
+        alt={album.data.image.alt}
+      />
+      <div class="content">
+        <h3>Track List</h3>
+        <ol>
+          {album.data.tracks.map((track) => <li>{track}</li>)}
+        </ol>
+        <Content />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,36 @@
+---
+import type { CollectionEntry } from "astro:content";
+import ArtistCard from "./ArtistCard.astro";
+import Tooltip from "./Tooltip.astro";
+
+type Props = {
+  artists: CollectionEntry<"artists">[];
+};
+
+const { artists } = Astro.props;
+const grid = "artists";
+---
+
+<section class="artist-grid" id="grid" data-grid={grid}>
+  {artists.map((artist) => <ArtistCard artist={artist} />)}
+</section>
+
+<Tooltip grid={grid} />
+
+<style>
+  section {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, calc(100% / 2));
+    margin: 1rem 0 10rem;
+    min-height: 400px;
+    @media screen and (min-width: 30em) {
+      grid-template-columns: repeat(4, calc(100% / 4));
+    }
+    @media screen and (min-width: 50em) {
+      grid-template-columns: repeat(7, calc(100% / 7));
+    }
+  }
+</style>
