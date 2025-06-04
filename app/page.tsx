@@ -1,62 +1,34 @@
-import { HoverLinkPreview } from "@/components/ui/hover-link-preview";
-import Image from "next/image";
+'use'
+import Marquee from "@/components/marquee";
 
-export default function Home() {
+export default function Page() {
+  const developmentItems = [
+    { link: '#dev1', text: 'Dev Item 1', image: 'https://picsum.photos/seed/dev1/600/400' },
+    { link: '#dev2', text: 'Dev Item 2', image: 'https://picsum.photos/seed/dev2/600/400' },
+  ];
+  const designItems = [
+    { link: '#design1', text: 'Design Item 1', image: 'https://picsum.photos/seed/design1/600/400' },
+    { link: '#design2', text: 'Design Item 2', image: 'https://picsum.photos/seed/design2/600/400' },
+  ];
+  const integrationItems = [
+    { link: '#integ1', text: 'Integration Item 1', image: 'https://picsum.photos/seed/integ1/600/400' },
+    { link: '#integ2', text: 'Integration Item 2', image: 'https://picsum.photos/seed/integ2/600/400' },
+  ];
+  const electricianItems = [
+    { link: '#elec1', text: 'Electrician Item 1', image: 'https://picsum.photos/seed/elec1/600/400' },
+    { link: '#elec2', text: 'Electrician Item 2', image: 'https://picsum.photos/seed/elec2/600/400' },
+  ];
+
+  const categorizedItems = [
+    { category: "Development", items: developmentItems },
+    { category: "Design", items: designItems },
+    { category: "Integration", items: integrationItems },
+    { category: "Electrician", items: electricianItems },
+  ];
+  
   return (
-    <div className="h-full w-full flex flex-col place-items-center place-content-center gap-4">
-      <div className="flex flex-col place-items-center gap-1">
-        <span className="text-4xl flex gap-1 place-items-center">
-          Hey! I'm
-          <HoverLinkPreview
-            href="https://21st/dev/magic"
-            previewImage="/images/logan.jpeg"
-            imageAlt="Example preview"
-          >
-            Logan Whitten
-          </HoverLinkPreview>
-        </span>
-        <span className="text-secondary-foreground text-2xl">
-          developer, lighting designer, and programmer.
-        </span>
-      </div>
-      <div>
-        <div className="flex gap-1 flex-col place-items-center">
-          <div>
-            I'm currently working at:
-            <HoverLinkPreview
-              href="https://21st/dev/magic"
-              previewImage="https://illuminated-integration.com/wp-content/uploads/2023/08/Website-Project-Cover-5-scaled-1-1536x628.jpg"
-              imageAlt="Example preview"
-            >
-              Illuminated Integration
-            </HoverLinkPreview>
-          </div>
-          <div>
-            and in my spare time:
-            <HoverLinkPreview
-              href="https://21st/dev/magic"
-              previewImage="https://21st.dev/magic-agent-og-image.png"
-              imageAlt="Example preview"
-            >
-              Werknotes
-            </HoverLinkPreview>
-            <HoverLinkPreview
-              href="https://21st/dev/magic"
-              previewImage="https://21st.dev/magic-agent-og-image.png"
-              imageAlt="Example preview"
-            >
-              Lighting Notes
-            </HoverLinkPreview>
-            <HoverLinkPreview
-              href="https://21st/dev/magic"
-              previewImage="https://21st.dev/magic-agent-og-image.png"
-              imageAlt="Example preview"
-            >
-              GelDB
-            </HoverLinkPreview>
-          </div>
-        </div>
-      </div>
+    <div className="h-full w-full">
+      <Marquee categorizedDemoItems={categorizedItems} />
     </div>
   );
 }
