@@ -3,7 +3,7 @@ import Marquee from "@/components/marquee";
 
 export default function Page() {
   const developmentItems = [
-    { link: '#dev1', text: 'Dev Item 1', image: 'https://picsum.photos/seed/dev1/600/400' },
+    { link: '#dev1', text: 'Dev TEST 1', image: 'https://picsum.photos/seed/dev1/600/400' },
     { link: '#dev2', text: 'Dev Item 2', image: 'https://picsum.photos/seed/dev2/600/400' },
   ];
   const designItems = [
