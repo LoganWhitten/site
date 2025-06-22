@@ -4,7 +4,7 @@ import { FileUser, Github, Instagram, Linkedin } from "lucide-react";
 
 export default function Hero(){
     return (
-      <div className="h-lvh w-screen flex flex-col justify-center items-center relative">
+      <div className="h-dvh w-screen flex flex-col justify-center items-center relative">
         <LavaLamp />
         <h1 className="text-6xl md:text-8xl font-bold tracking-tight mix-blend-exclusion text-white whitespace-nowrap">
           Logan Whitten
