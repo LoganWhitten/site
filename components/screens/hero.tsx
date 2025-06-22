@@ -13,7 +13,7 @@ export default function Hero(){
           Lighting Technician & Developer.
           <br />
           <div className="pt-2 flex w-full place-items-center place-content-center gap-4">
-            <a href="resume">
+            <a href="/LoganWhittenResume-3-24-25.pdf">
               <FileUser />
             </a>
             <a href="https://instagram.com/loganwhitten512">
