@@ -14,16 +14,16 @@ export default function Hero(){
           <br />
           <div className="pt-2 flex w-full place-items-center place-content-center gap-4">
             <a href="/LoganWhittenResume-3-24-25.pdf">
-              <FileUser />
+              <FileUser className="transition-transform duration-300 hover:scale-110" />
             </a>
             <a href="https://instagram.com/loganwhitten512">
-              <Instagram />
+              <Instagram className="transition-transform duration-300 hover:scale-110" />
             </a>
             <a href="https://www.linkedin.com/in/loganwhitten/">
-              <Linkedin />
+              <Linkedin className="transition-transform duration-300 hover:scale-110" />
             </a>
             <a href="https://www.github.com/loganwhitten">
-              <Github />
+              <Github className="transition-transform duration-300 hover:scale-110" />
             </a>
           </div>
         </div>
