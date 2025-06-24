@@ -18,21 +18,12 @@ interface iCardProps extends Omit<iCardItem, "src" | "link" | "tag"> {
 	src: string;
 }
 
-// Constants
-const TOP_VALUES: Record<number, string> = {
-	1: "1/2",
-	2: "1/2",
-	3: "1/2",
-	4: "1/2",
-};
-
 // Components
 const Card: FC<iCardProps> = ({
 	title,
 	description,
 	color,
 	textColor,
-	i,
 	src,
 }) => {
 	return (
