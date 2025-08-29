@@ -1,11 +1,11 @@
 'use client'
-import { LavaLamp } from "../ui/fluid-blob";
 import { FileUser, Github, Instagram, Linkedin } from "lucide-react";
+import { ShaderAnimation } from "../ui/shader-animation";
 
 export default function Hero(){
     return (
       <div className="h-dvh w-screen flex flex-col justify-center items-center relative">
-        <LavaLamp />
+        <ShaderAnimation />
         <h1 className="text-6xl md:text-8xl font-bold tracking-tight mix-blend-exclusion text-white whitespace-nowrap">
           Logan Whitten
         </h1>
