@@ -2,7 +2,6 @@
 
 import { Label } from "@radix-ui/react-label";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { searchForGel } from "@/lib/gel/search";
 import { Input } from "@/components/ui/input";
 import CopyBtn from "./copy-btn";
