@@ -13,12 +13,12 @@ export default function GelPicker() {
     setColor(searchForGel(search));
   }, [search]);
   return (
-    <div className="md:flex border bg-black rounded-md p-4 place-items-center place-content-center text-xl text-white gap-5 min-w-[300px] max-w-[350px]">
+    <div className="md:flex border border-white bg-black rounded-md p-4 place-items-center place-content-center text-xl text-white gap-5 min-w-[300px] max-w-[350px] mix-blend-normal">
       <div className="grid items-center gap-2">
         <Label htmlFor="gel">Type a Gel Color</Label>
         <div className="flex dark">
           <Input
-            className="bg-black outline"
+            className="bg-black border-white outline"
             id="gel"
             maxLength={10}
             placeholder="ex. R3202"

@@ -36,7 +36,11 @@ export default function Hero() {
             <PopoverTrigger asChild>
               <RainbowButton size="lg">GelTools</RainbowButton>
             </PopoverTrigger>
-            <PopoverContent align="center" sideOffset={8} className="p-0 bg-transparent border-none shadow-none">
+            <PopoverContent 
+              align="center" 
+              sideOffset={8} 
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 p-0 bg-black border border-white shadow-xl rounded-lg z-[100] mix-blend-normal"
+            >
               <GelPicker />
             </PopoverContent>
           </Popover>
