@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: {children: ReactNode}){
   return (
     <html>
-      <body className="h-lvh dark w-full">
+      <body className="h-svh dark w-full">
         <ReactLenis root />
         <div >{children}</div>
       </body>

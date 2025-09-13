@@ -9,15 +9,16 @@ import GelPicker from "@/components/gel-picker";
 
 export default function Hero() {
   return (
-    <div className="h-dvh w-screen flex flex-col justify-center items-center relative">
+    <div className="h-svh w-screen flex flex-col justify-center items-center relative">
       <ShaderAnimation />
-      <h1 className="text-6xl md:text-8xl font-bold tracking-tight mix-blend-exclusion text-white whitespace-nowrap">
+      <h1 className="text-5xl md:text-8xl font-bold tracking-tight mix-blend-exclusion text-white whitespace-nowrap">
         Logan Whitten
       </h1>
-      <div className="text-lg md:text-xl text-center text-white mix-blend-exclusion max-w-2xl leading-relaxed">
+      <div className=" md:text-xl text-center text-white max-w-2xl leading-relaxed">
+        <span className="mix-blend-exclusion">
         Lighting Technician & Developer.
         <br />
-        <div className="pt-2 flex w-full place-items-center place-content-center gap-4">
+        <div className="pt-2 relative flex w-full place-items-center place-content-center gap-4">
           <a href="/LoganWhittenResume-3-24-25.pdf">
             <FileUser className="transition-transform duration-300 hover:scale-110" />
           </a>
@@ -31,14 +32,15 @@ export default function Hero() {
             <Github className="transition-transform duration-300 hover:scale-110" />
           </a>
         </div>
+        </span>
         <div className="flex w-full place-content-center mt-4">
           <Popover>
             <PopoverTrigger asChild>
               <RainbowButton size="lg">GelTools</RainbowButton>
             </PopoverTrigger>
-            <PopoverContent 
-              align="center" 
-              sideOffset={8} 
+            <PopoverContent
+              align="center"
+              sideOffset={8}
               className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 p-0 bg-black border border-white shadow-xl rounded-lg z-[100] mix-blend-normal"
             >
               <GelPicker />

@@ -13,7 +13,7 @@ export default function GelPicker() {
     setColor(searchForGel(search));
   }, [search]);
   return (
-    <div className="md:flex border border-white bg-black rounded-md p-4 place-items-center place-content-center text-xl text-white gap-5 min-w-[300px] max-w-[350px] mix-blend-normal">
+    <div className="flex border border-white bg-black rounded-md p-4 place-items-center place-content-center text-xl text-white gap-5 min-w-[300px] md:max-w-[650px] mix-blend-normal">
       <div className="grid items-center gap-2">
         <Label htmlFor="gel">Type a Gel Color</Label>
         <div className="flex dark">
@@ -30,7 +30,7 @@ export default function GelPicker() {
         </div>
       </div>
       <div
-  className="h-40 w-40 flex rounded-lg z-10 outline outline-white place-content-center place-items-center text-white"
+  className="h-30 w-30 md:h-40 md:w-40 flex rounded-lg z-10 outline outline-white place-content-center place-items-center text-white"
         style={{ backgroundColor: color || "#000000" }}
       >
         {search}
