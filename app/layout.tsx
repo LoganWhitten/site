@@ -14,7 +14,7 @@ export default function RootLayout({children}: {children: ReactNode}){
     <html>
       <body className="h-svh dark w-full">
         <ReactLenis root />
-        <div >{children}</div>
+        <div className="cursor-default" >{children}</div>
       </body>
     </html>
   );
