@@ -77,10 +77,61 @@ export default function Page() {
     const [duration, setDuration] = useState(0);
     const [frameRate, setFrameRate] = useState<FrameRate>(24);
     const [isMobile, setIsMobile] = useState(false);
+    const [activeCueId, setActiveCueId] = useState<string | null>(null);
+    const [flashColor, setFlashColor] = useState<string | null>(null);
+    const [activeTypeId, setActiveTypeId] = useState<string | null>(null);
+    const [midiOutput, setMidiOutput] = useState<MIDIOutput | null>(null);
+    const [midiEnabled, setMidiEnabled] = useState(false);
+    const [availableMidiOutputs, setAvailableMidiOutputs] = useState<MIDIOutput[]>([]);
+    const cueListRef = useRef<HTMLDivElement>(null);
+    const lastMtcTimeRef = useRef(0);
 
     // Get current track's cue point types
     const currentTrack = audioTracks.find(t => t.id === currentTrackId);
     const cuePointTypes = useMemo(() => currentTrack?.cuePointTypes || [], [currentTrack?.cuePointTypes]);
+
+    // Initialize MIDI
+    useEffect(() => {
+        if (navigator.requestMIDIAccess) {
+            navigator.requestMIDIAccess({ sysex: true }) // Enable sysex for full frame messages
+                .then((midiAccess) => {
+                    const outputs = Array.from(midiAccess.outputs.values());
+                    setAvailableMidiOutputs(outputs);
+                    if (outputs.length > 0) {
+                        setMidiOutput(outputs[0]);
+                    }
+                })
+                .catch((err) => {
+                    console.error('MIDI Access Error:', err);
+                });
+        }
+    }, []);
+
+    // Send MTC Full Frame message
+    const sendMTCFullFrame = useCallback((timeInSeconds: number) => {
+        if (!midiOutput || !midiEnabled) return;
+
+        const hours = Math.floor(timeInSeconds / 3600);
+        const minutes = Math.floor((timeInSeconds % 3600) / 60);
+        const seconds = Math.floor(timeInSeconds % 60);
+        const frames = Math.floor((timeInSeconds % 1) * frameRate);
+
+        // Frame rate code: 0 = 24fps, 1 = 25fps, 2 = 29.97fps (drop), 3 = 30fps
+        const frameRateCode = frameRate === 24 ? 0 : 3;
+
+        // MTC Full Frame SysEx message
+        // F0 7F 7F 01 01 hh mm ss ff F7
+        const message = [
+            0xF0, 0x7F, 0x7F, 0x01, 0x01,
+            (frameRateCode << 5) | hours,
+            minutes,
+            seconds,
+            frames,
+            0xF7
+        ];
+        
+        midiOutput.send(message);
+    }, [midiOutput, midiEnabled, frameRate]);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -277,7 +328,39 @@ export default function Page() {
             });
 
             wavesurfer.on('audioprocess', () => {
-                setCurrentTime(wavesurfer.getCurrentTime());
+                const time = wavesurfer.getCurrentTime();
+                setCurrentTime(time);
+                
+                // Send MTC full frame messages at frame rate intervals
+                if (midiEnabled && midiOutput) {
+                    const timeSinceLastMTC = time - lastMtcTimeRef.current;
+                    const frameInterval = 1 / frameRate; // One full frame per frame period
+                    
+                    if (timeSinceLastMTC >= frameInterval) {
+                        sendMTCFullFrame(time);
+                        lastMtcTimeRef.current = time;
+                    }
+                }
+                
+                // Check if we've hit any cue points (within 0.1 second tolerance)
+                if (currentTrack) {
+                    const hitCue = currentTrack.cuePoints.find(cue => {
+                        const diff = Math.abs(cue.time - time);
+                        return diff < 0.1 && diff > 0; // Forward progress only
+                    });
+                    
+                    if (hitCue) {
+                        const type = cuePointTypes.find(t => t.id === hitCue.typeId);
+                        if (type) {
+                            // Set active cue and flash color
+                            setActiveCueId(hitCue.id);
+                            setFlashColor(type.color);
+                            
+                            // Clear flash after 300ms
+                            setTimeout(() => setFlashColor(null), 300);
+                        }
+                    }
+                }
             });
 
             wavesurfer.on('interaction', () => {
@@ -285,7 +368,12 @@ export default function Page() {
             });
 
             wavesurfer.on('seeking', () => {
-                setCurrentTime(wavesurfer.getCurrentTime());
+                const time = wavesurfer.getCurrentTime();
+                setCurrentTime(time);
+                // Send full frame on seek for immediate timecode sync
+                if (midiEnabled && midiOutput) {
+                    sendMTCFullFrame(time);
+                }
             });
 
             wavesurfer.on('play', () => {
@@ -305,7 +393,7 @@ export default function Page() {
                 URL.revokeObjectURL(url);
             };
         }
-    }, [audioFile]);
+    }, [audioFile, currentTrack, cuePointTypes, frameRate, midiEnabled, midiOutput, sendMTCFullFrame]);
 
     // Add audio tracks
     const addAudioTracks = useCallback((files: File[]) => {
@@ -618,16 +706,38 @@ $$Format 3.00
             // Ignore if typing in an input
             if (e.target instanceof HTMLInputElement) return;
 
+            // Spacebar for play/pause
+            if (e.code === 'Space' || e.key === ' ') {
+                e.preventDefault();
+                togglePlayPause();
+                return;
+            }
+
+            // Number keys for dropping cue points
             const type = cuePointTypes.find(t => t.key === e.key);
             if (type && wavesurferRef.current) {
                 e.preventDefault();
                 dropCuePoint(type.id);
+                
+                // Flash the type button
+                setActiveTypeId(type.id);
+                setTimeout(() => setActiveTypeId(null), 200);
             }
         };
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [cuePointTypes, dropCuePoint]);
+    }, [cuePointTypes, dropCuePoint, togglePlayPause]);
+
+    // Scroll active cue into view
+    useEffect(() => {
+        if (activeCueId && cueListRef.current) {
+            const activeElement = cueListRef.current.querySelector(`[data-cue-id="${activeCueId}"]`);
+            if (activeElement) {
+                activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }, [activeCueId]);
 
     // Render cue points on waveform
     useEffect(() => {
@@ -775,6 +885,7 @@ $$Format 3.00
                                 <div className="flex items-center gap-2">
                                     {cuePointTypes.map((type) => {
                                         const IconComponent = ICON_MAP[type.icon];
+                                        const isActiveType = activeTypeId === type.id;
                                         return (
                                             <Popover key={type.id}>
                                                 <PopoverTrigger asChild>
@@ -787,10 +898,12 @@ $$Format 3.00
                                                         }}
                                                     >
                                                         <div 
-                                                            className="w-8 h-8 rounded-lg transition-all hover:scale-110 flex items-center justify-center"
+                                                            className="w-8 h-8 rounded-lg transition-all flex items-center justify-center"
                                                             style={{
-                                                                backgroundColor: `${type.color}40`,
-                                                                border: `1px solid ${type.color}60`
+                                                                backgroundColor: isActiveType ? `${type.color}80` : `${type.color}40`,
+                                                                border: `1px solid ${type.color}60`,
+                                                                transform: isActiveType ? 'scale(1.15)' : 'scale(1)',
+                                                                boxShadow: isActiveType ? `0 0 15px ${type.color}60` : 'none'
                                                             }}
                                                         >
                                                             {IconComponent && <IconComponent className="w-4 h-4" style={{ color: type.color }} strokeWidth={1.5} />}
@@ -930,6 +1043,7 @@ $$Format 3.00
                                         </PopoverTrigger>
                                         <PopoverContent className="w-32 bg-black/95 backdrop-blur-xl border-white/20 p-3 z-[100]">
                                             <div className="space-y-2">
+                                                <div className="text-xs text-white/40 mb-2">Frame Rate</div>
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={() => setFrameRate(24)}
@@ -952,6 +1066,42 @@ $$Format 3.00
                                                         30
                                                     </button>
                                                 </div>
+                                                
+                                                <div className="pt-2 border-t border-white/10">
+                                                    <div className="text-xs text-white/40 mb-2">MIDI Timecode</div>
+                                                    <button
+                                                        onClick={() => setMidiEnabled(!midiEnabled)}
+                                                        className={`w-full px-2 py-1.5 rounded-lg text-xs transition-all ${
+                                                            midiEnabled
+                                                                ? 'bg-green-500/20 text-green-400 border border-green-500/40'
+                                                                : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
+                                                        }`}
+                                                    >
+                                                        {midiEnabled ? '● MTC Active' : 'Enable MTC'}
+                                                    </button>
+                                                    {availableMidiOutputs.length > 0 && (
+                                                        <select
+                                                            value={midiOutput?.id || ''}
+                                                            onChange={(e) => {
+                                                                const output = availableMidiOutputs.find(o => o.id === e.target.value);
+                                                                if (output) setMidiOutput(output);
+                                                            }}
+                                                            className="w-full mt-1 px-2 py-1.5 bg-white/5 border border-white/20 rounded-lg text-xs text-white/80 focus:outline-none focus:border-white/40"
+                                                        >
+                                                            {availableMidiOutputs.map(output => (
+                                                                <option key={output.id} value={output.id} className="bg-black">
+                                                                    {output.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    )}
+                                                    {availableMidiOutputs.length === 0 && (
+                                                        <div className="text-[10px] text-white/30 mt-1">
+                                                            No MIDI devices found
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                
                                                 <button
                                                     onClick={() => setAudioFile(null)}
                                                     className="w-full px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white/60 transition-all"
@@ -1056,8 +1206,18 @@ $$Format 3.00
                         {/* Right Column - Timecode & Cue Points */}
                         <div className="w-80 flex flex-col space-y-4">
                             {/* Timecode Display */}
-                            <div className="px-4 py-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 text-center relative z-10">
-                                <div className="text-4xl font-mono font-light text-white tracking-[0.15em]">
+                            <div 
+                                className="px-4 py-6 rounded-2xl backdrop-blur-xl border transition-all duration-300 text-center relative z-10"
+                                style={{
+                                    backgroundColor: flashColor ? `${flashColor}40` : 'rgba(255, 255, 255, 0.05)',
+                                    borderColor: flashColor ? `${flashColor}80` : 'rgba(255, 255, 255, 0.1)',
+                                    boxShadow: flashColor ? `0 0 30px ${flashColor}40` : 'none'
+                                }}
+                            >
+                                <div 
+                                    className="text-4xl font-mono font-light tracking-[0.15em] transition-colors duration-300"
+                                    style={{ color: flashColor || 'white' }}
+                                >
                                     {formatTimecode(currentTime, frameRate)}
                                 </div>
                                 <div className="mt-2 text-xs text-white/30 tracking-wider">
@@ -1074,18 +1234,32 @@ $$Format 3.00
                                         <div className="text-xs text-white/40">
                                             {trackCuePoints.length} point{trackCuePoints.length !== 1 ? 's' : ''}
                                         </div>
-                                        <div className="flex-1 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pr-1">
+                                        <div 
+                                            ref={cueListRef}
+                                            className="flex-1 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pr-1"
+                                        >
                                             {trackCuePoints.map((point) => {
                                                 const type = cuePointTypes.find(t => t.id === point.typeId);
                                                 if (!type) return null;
+                                                const isActive = activeCueId === point.id;
                                                 return (
                                                     <div
                                                         key={point.id}
-                                                        className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
+                                                        data-cue-id={point.id}
+                                                        className="flex items-center gap-2 p-2 rounded-lg border transition-all duration-300 group"
+                                                        style={{
+                                                            backgroundColor: isActive ? `${type.color}30` : 'rgba(255, 255, 255, 0.05)',
+                                                            borderColor: isActive ? `${type.color}80` : 'rgba(255, 255, 255, 0.1)',
+                                                            boxShadow: isActive ? `0 0 15px ${type.color}30` : 'none',
+                                                            transform: isActive ? 'scale(1.02)' : 'scale(1)'
+                                                        }}
                                                     >
                                                         <div
-                                                            className="w-3 h-3 rounded-full flex-shrink-0"
-                                                            style={{ backgroundColor: type.color }}
+                                                            className="w-3 h-3 rounded-full flex-shrink-0 transition-transform duration-300"
+                                                            style={{ 
+                                                                backgroundColor: type.color,
+                                                                transform: isActive ? 'scale(1.3)' : 'scale(1)'
+                                                            }}
                                                         />
                                                         <div className="flex-1 min-w-0">
                                                             <input
