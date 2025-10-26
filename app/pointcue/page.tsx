@@ -13,6 +13,11 @@ interface CuePointType {
     color: string;
     key: string; // Keyboard key (0-9)
     icon: string; // Lucide icon name
+    exportConfig?: {
+        cueListNumber?: number;
+        subNumber?: number;
+        showControlTrack?: string;
+    };
 }
 
 interface CuePoint {
@@ -83,8 +88,13 @@ export default function Page() {
     const [midiOutput, setMidiOutput] = useState<MIDIOutput | null>(null);
     const [midiEnabled, setMidiEnabled] = useState(false);
     const [availableMidiOutputs, setAvailableMidiOutputs] = useState<MIDIOutput[]>([]);
+    const [showExportConfig, setShowExportConfig] = useState(false);
+    const [scListFormat, setScListFormat] = useState<'SMPTE' | 'MIDI'>('SMPTE');
     const cueListRef = useRef<HTMLDivElement>(null);
     const lastMtcTimeRef = useRef(0);
+    const midiAccessRef = useRef<MIDIAccess | null>(null);
+    const [selectedCuePoint, setSelectedCuePoint] = useState<string | null>(null);
+    const midiInitializing = useRef(false);
 
     // Get current track's cue point types
     const currentTrack = audioTracks.find(t => t.id === currentTrackId);
@@ -92,45 +102,152 @@ export default function Page() {
 
     // Initialize MIDI
     useEffect(() => {
-        if (navigator.requestMIDIAccess) {
-            navigator.requestMIDIAccess({ sysex: true }) // Enable sysex for full frame messages
-                .then((midiAccess) => {
+        const initMIDI = async () => {
+            if (!navigator.requestMIDIAccess) {
+                console.error('Web MIDI API not supported');
+                return;
+            }
+
+            if (midiInitializing.current) {
+                return; // Prevent concurrent initialization
+            }
+
+            midiInitializing.current = true;
+
+            try {
+                // Clean up old access
+                if (midiAccessRef.current) {
+                    midiAccessRef.current.onstatechange = null;
+                }
+
+                // Force a fresh MIDI access request
+                const midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+                midiAccessRef.current = midiAccess;
+                
+                const updateOutputs = () => {
                     const outputs = Array.from(midiAccess.outputs.values());
                     setAvailableMidiOutputs(outputs);
+                    
+                    // Update current output if needed
+                    setMidiOutput(prev => {
+                        if (!prev && outputs.length > 0) {
+                            return outputs[0];
+                        }
+                        if (prev && !outputs.find(o => o.id === prev.id)) {
+                            // Current output disconnected, select first available
+                            return outputs.length > 0 ? outputs[0] : null;
+                        }
+                        if (prev) {
+                            // Refresh the output reference
+                            return outputs.find(o => o.id === prev.id) || prev;
+                        }
+                        return prev;
+                    });
+                };
+                
+                // Initial update
+                updateOutputs();
+                
+                // Listen for device changes
+                midiAccess.onstatechange = () => {
+                    updateOutputs();
+                };
+
+                console.log('MIDI initialized successfully');
+            } catch (err) {
+                console.error('MIDI Access Error:', err);
+            } finally {
+                midiInitializing.current = false;
+            }
+        };
+
+        // Initialize on mount
+        initMIDI();
+
+        // Reinitialize when MIDI is enabled (forces fresh connection)
+        if (midiEnabled) {
+            // Use a small delay to ensure clean reinitialization
+            const timeoutId = setTimeout(() => initMIDI(), 100);
+            return () => {
+                clearTimeout(timeoutId);
+                if (midiAccessRef.current) {
+                    midiAccessRef.current.onstatechange = null;
+                }
+            };
+        }
+
+        return () => {
+            if (midiAccessRef.current) {
+                midiAccessRef.current.onstatechange = null;
+            }
+        };
+    }, [midiEnabled]);
+
+    // Send MTC Full Frame message
+    const sendMTCFullFrame = useCallback(async (timeInSeconds: number) => {
+        if (!midiEnabled) return;
+        
+        // Check if we need to reinitialize MIDI
+        if (!midiAccessRef.current && !midiInitializing.current) {
+            console.log('MIDI access lost, reinitializing...');
+            if (navigator.requestMIDIAccess) {
+                try {
+                    midiInitializing.current = true;
+                    const midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+                    midiAccessRef.current = midiAccess;
+                    
+                    const outputs = Array.from(midiAccess.outputs.values());
+                    setAvailableMidiOutputs(outputs);
+                    
                     if (outputs.length > 0) {
                         setMidiOutput(outputs[0]);
                     }
-                })
-                .catch((err) => {
-                    console.error('MIDI Access Error:', err);
-                });
+                    
+                    console.log('MIDI reinitialized successfully');
+                } catch (err) {
+                    console.error('MIDI reinit error:', err);
+                    return;
+                } finally {
+                    midiInitializing.current = false;
+                }
+            } else {
+                return;
+            }
         }
-    }, []);
-
-    // Send MTC Full Frame message
-    const sendMTCFullFrame = useCallback((timeInSeconds: number) => {
-        if (!midiOutput || !midiEnabled) return;
-
-        const hours = Math.floor(timeInSeconds / 3600);
-        const minutes = Math.floor((timeInSeconds % 3600) / 60);
-        const seconds = Math.floor(timeInSeconds % 60);
-        const frames = Math.floor((timeInSeconds % 1) * frameRate);
-
-        // Frame rate code: 0 = 24fps, 1 = 25fps, 2 = 29.97fps (drop), 3 = 30fps
-        const frameRateCode = frameRate === 24 ? 0 : 3;
-
-        // MTC Full Frame SysEx message
-        // F0 7F 7F 01 01 hh mm ss ff F7
-        const message = [
-            0xF0, 0x7F, 0x7F, 0x01, 0x01,
-            (frameRateCode << 5) | hours,
-            minutes,
-            seconds,
-            frames,
-            0xF7
-        ];
         
-        midiOutput.send(message);
+        // Get fresh MIDI output from ref if available
+        const currentOutput = midiAccessRef.current && midiOutput
+            ? Array.from(midiAccessRef.current.outputs.values()).find(o => o.id === midiOutput.id) || midiOutput
+            : midiOutput;
+            
+        if (!currentOutput) return;
+
+        try {
+            const hours = Math.floor(timeInSeconds / 3600);
+            const minutes = Math.floor((timeInSeconds % 3600) / 60);
+            const seconds = Math.floor(timeInSeconds % 60);
+            const frames = Math.floor((timeInSeconds % 1) * frameRate);
+
+            // Frame rate code: 0 = 24fps, 1 = 25fps, 2 = 29.97fps (drop), 3 = 30fps
+            const frameRateCode = frameRate === 24 ? 0 : 3;
+
+            // MTC Full Frame SysEx message
+            // F0 7F 7F 01 01 hh mm ss ff F7
+            const message = [
+                0xF0, 0x7F, 0x7F, 0x01, 0x01,
+                (frameRateCode << 5) | hours,
+                minutes,
+                seconds,
+                frames,
+                0xF7
+            ];
+            
+            currentOutput.send(message);
+        } catch (error) {
+            console.error('MIDI send error:', error);
+            // Clear the MIDI access ref to force reinitialization on next call
+            midiAccessRef.current = null;
+        }
     }, [midiOutput, midiEnabled, frameRate]);
 
     // Load from localStorage on mount
@@ -192,38 +309,8 @@ export default function Page() {
 
         loadData();
 
-        // Prevent browser pinch-to-zoom globally on this page (except on waveform)
-        const preventBrowserZoom = (e: WheelEvent) => {
-            // Allow zoom on the waveform container
-            if (waveformRef.current?.contains(e.target as Node)) {
-                return;
-            }
-            
-            if (e.ctrlKey) {
-                e.preventDefault();
-            }
-        };
-
-        const preventGestureZoom = (e: Event) => {
-            // Allow gestures on the waveform container
-            if (waveformRef.current?.contains(e.target as Node)) {
-                return;
-            }
-            
-            e.preventDefault();
-        };
-
-        document.addEventListener('wheel', preventBrowserZoom, { passive: false });
-        document.addEventListener('gesturestart', preventGestureZoom, { passive: false });
-        document.addEventListener('gesturechange', preventGestureZoom, { passive: false });
-        document.addEventListener('gestureend', preventGestureZoom, { passive: false });
-
         return () => {
             window.removeEventListener('resize', checkMobile);
-            document.removeEventListener('wheel', preventBrowserZoom);
-            document.removeEventListener('gesturestart', preventGestureZoom);
-            document.removeEventListener('gesturechange', preventGestureZoom);
-            document.removeEventListener('gestureend', preventGestureZoom);
         };
     }, []);
 
@@ -343,24 +430,29 @@ export default function Page() {
                 }
                 
                 // Check if we've hit any cue points (within 0.1 second tolerance)
-                if (currentTrack) {
-                    const hitCue = currentTrack.cuePoints.find(cue => {
-                        const diff = Math.abs(cue.time - time);
-                        return diff < 0.1 && diff > 0; // Forward progress only
-                    });
-                    
-                    if (hitCue) {
-                        const type = cuePointTypes.find(t => t.id === hitCue.typeId);
-                        if (type) {
-                            // Set active cue and flash color
-                            setActiveCueId(hitCue.id);
-                            setFlashColor(type.color);
-                            
-                            // Clear flash after 300ms
-                            setTimeout(() => setFlashColor(null), 300);
+                // Use callback to get fresh state
+                setAudioTracks(tracks => {
+                    const track = tracks.find(t => t.id === currentTrackId);
+                    if (track) {
+                        const hitCue = track.cuePoints.find(cue => {
+                            const diff = Math.abs(cue.time - time);
+                            return diff < 0.1 && diff > 0; // Forward progress only
+                        });
+                        
+                        if (hitCue) {
+                            const type = track.cuePointTypes.find(t => t.id === hitCue.typeId);
+                            if (type) {
+                                // Set active cue and flash color
+                                setActiveCueId(hitCue.id);
+                                setFlashColor(type.color);
+                                
+                                // Clear flash after 300ms
+                                setTimeout(() => setFlashColor(null), 300);
+                            }
                         }
                     }
-                }
+                    return tracks; // Return unchanged to avoid infinite loop
+                });
             });
 
             wavesurfer.on('interaction', () => {
@@ -378,6 +470,14 @@ export default function Page() {
 
             wavesurfer.on('play', () => {
                 setIsPlaying(true);
+                // Refresh MIDI output when playback starts (fixes suspension issues)
+                if (midiEnabled && midiAccessRef.current && midiOutput) {
+                    const outputs = Array.from(midiAccessRef.current.outputs.values());
+                    const refreshedOutput = outputs.find(o => o.id === midiOutput.id);
+                    if (refreshedOutput) {
+                        setMidiOutput(refreshedOutput);
+                    }
+                }
             });
 
             wavesurfer.on('pause', () => {
@@ -393,7 +493,7 @@ export default function Page() {
                 URL.revokeObjectURL(url);
             };
         }
-    }, [audioFile, currentTrack, cuePointTypes, frameRate, midiEnabled, midiOutput, sendMTCFullFrame]);
+    }, [audioFile, frameRate, sendMTCFullFrame]);
 
     // Add audio tracks
     const addAudioTracks = useCallback((files: File[]) => {
@@ -533,6 +633,23 @@ export default function Page() {
         ));
     };
 
+    // Update export config for a cue type
+    const updateExportConfig = (typeId: string, config: Partial<CuePointType['exportConfig']>) => {
+        if (!currentTrack) return;
+        setAudioTracks(prev => prev.map(track =>
+            track.id === currentTrack.id
+                ? {
+                    ...track,
+                    cuePointTypes: track.cuePointTypes.map(type =>
+                        type.id === typeId
+                            ? { ...type, exportConfig: { ...type.exportConfig, ...config } }
+                            : type
+                    )
+                }
+                : track
+        ));
+    };
+
     // Delete cue point type
     const deleteCuePointType = (id: string) => {
         if (!currentTrack) return;
@@ -604,7 +721,7 @@ $$Format 3.00
 `;
 
         if (typeId) {
-            // Export single type to one cuelist
+            // Export single type to one cuelist or sub
             const type = cuePointTypes.find(t => t.id === typeId);
             if (!type) return;
 
@@ -612,46 +729,38 @@ $$Format 3.00
                 .filter(p => p.typeId === typeId)
                 .sort((a, b) => a.time - b.time);
 
-            output += `$CueList 1
-	Text ${type.name} ${timestamp}
-	$$Data TimeCode 0
+            const showControlTrack = type.exportConfig?.showControlTrack || type.name;
 
-`;
-            // Add cues
-            filteredPoints.forEach((point, index) => {
-                output += `Cue ${index + 1} 1
-	Text ${point.name || ''}
-
-`;
-            });
-
-            // Add SMPTE list
-            output += `$SCList 1 2 ! SMPTE
-	Text ${type.name}
+            if (type.exportConfig?.subNumber) {
+                // Export as Sub Bump (no cuelist, just sub)
+                const subNum = type.exportConfig.subNumber;
+                
+                // Add show control list for sub bumps
+                const scType = scListFormat === 'SMPTE' ? '2 ! SMPTE' : '1 ! MIDI';
+                output += `$SCList 1 ${scType}
+	Text ${showControlTrack}`;
+                
+                if (scListFormat === 'SMPTE') {
+                    output += `
 	$$FirstFrame  00:00:00:00
 	$$LastFrame   ${formatTimecode(duration, frameRate)}
-	$$FramesPerSecond ${frameRate}
+	$$FramesPerSecond ${frameRate}`;
+                }
+                
+                output += `
 
 `;
-            // Add timecode entries
-            filteredPoints.forEach((point, index) => {
-                output += `$TimeCode  ${point.timecode}
+                // Add timecode/MIDI entries for sub bumps
+                filteredPoints.forEach((point) => {
+                    output += `$TimeCode  ${point.timecode}
 	Text ${point.name || ''}
-	$$SCData C 1/${index + 1}
+	$$SCData S ${subNum} B
 
 `;
-            });
-
-        } else {
-            // Export all types to separate cuelists
-            cuePointTypes.forEach((type, typeIndex) => {
-                const filteredPoints = currentTrack.cuePoints
-                    .filter(p => p.typeId === type.id)
-                    .sort((a, b) => a.time - b.time);
-
-                if (filteredPoints.length === 0) return;
-
-                const cueListNum = typeIndex + 1;
+                });
+            } else {
+                // Export as Cuelist
+                const cueListNum = type.exportConfig?.cueListNumber || 1;
                 
                 output += `$CueList ${cueListNum}
 	Text ${type.name} ${timestamp}
@@ -666,12 +775,19 @@ $$Format 3.00
 `;
                 });
 
-                // Add SMPTE list
-                output += `$SCList ${cueListNum} 2 ! SMPTE
-	Text ${type.name}
+                // Add show control list
+                const scType = scListFormat === 'SMPTE' ? '2 ! SMPTE' : '1 ! MIDI';
+                output += `$SCList ${cueListNum} ${scType}
+	Text ${showControlTrack}`;
+                
+                if (scListFormat === 'SMPTE') {
+                    output += `
 	$$FirstFrame  00:00:00:00
 	$$LastFrame   ${formatTimecode(duration, frameRate)}
-	$$FramesPerSecond ${frameRate}
+	$$FramesPerSecond ${frameRate}`;
+                }
+                
+                output += `
 
 `;
                 // Add timecode entries
@@ -682,6 +798,93 @@ $$Format 3.00
 
 `;
                 });
+            }
+
+        } else {
+            // Export all types to separate cuelists or subs
+            let scListCounter = 1;
+            
+            cuePointTypes.forEach((type) => {
+                const filteredPoints = currentTrack.cuePoints
+                    .filter(p => p.typeId === type.id)
+                    .sort((a, b) => a.time - b.time);
+
+                if (filteredPoints.length === 0) return;
+
+                const showControlTrack = type.exportConfig?.showControlTrack || type.name;
+                
+                if (type.exportConfig?.subNumber) {
+                    // Export as Sub Bump (no cuelist, just sub)
+                    const subNum = type.exportConfig.subNumber;
+                    
+                    // Add show control list for sub bumps
+                    const scType = scListFormat === 'SMPTE' ? '2 ! SMPTE' : '1 ! MIDI';
+                    output += `$SCList ${scListCounter} ${scType}
+	Text ${showControlTrack}`;
+                    
+                    if (scListFormat === 'SMPTE') {
+                        output += `
+	$$FirstFrame  00:00:00:00
+	$$LastFrame   ${formatTimecode(duration, frameRate)}
+	$$FramesPerSecond ${frameRate}`;
+                    }
+                    
+                    output += `
+
+`;
+                    // Add timecode/MIDI entries for sub bumps
+                    filteredPoints.forEach((point) => {
+                        output += `$TimeCode  ${point.timecode}
+	Text ${point.name || ''}
+	$$SCData S ${subNum} B
+
+`;
+                    });
+                    
+                    scListCounter++;
+                } else {
+                    // Export as Cuelist
+                    const cueListNum = type.exportConfig?.cueListNumber || scListCounter;
+                    
+                    output += `$CueList ${cueListNum}
+	Text ${type.name} ${timestamp}
+	$$Data TimeCode 0
+
+`;
+                    // Add cues
+                    filteredPoints.forEach((point, index) => {
+                        output += `Cue ${index + 1} 1
+	Text ${point.name || ''}
+
+`;
+                    });
+
+                    // Add show control list
+                    const scType = scListFormat === 'SMPTE' ? '2 ! SMPTE' : '1 ! MIDI';
+                    output += `$SCList ${scListCounter} ${scType}
+	Text ${showControlTrack}`;
+                    
+                    if (scListFormat === 'SMPTE') {
+                        output += `
+	$$FirstFrame  00:00:00:00
+	$$LastFrame   ${formatTimecode(duration, frameRate)}
+	$$FramesPerSecond ${frameRate}`;
+                    }
+                    
+                    output += `
+
+`;
+                    // Add timecode entries
+                    filteredPoints.forEach((point, index) => {
+                        output += `$TimeCode  ${point.timecode}
+	Text ${point.name || ''}
+	$$SCData C ${cueListNum}/${index + 1}
+
+`;
+                    });
+                    
+                    scListCounter++;
+                }
             });
         }
 
@@ -706,6 +909,14 @@ $$Format 3.00
             // Ignore if typing in an input
             if (e.target instanceof HTMLInputElement) return;
 
+            // Delete key for selected cue point
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCuePoint) {
+                e.preventDefault();
+                deleteCuePoint(selectedCuePoint);
+                setSelectedCuePoint(null);
+                return;
+            }
+
             // Spacebar for play/pause
             if (e.code === 'Space' || e.key === ' ') {
                 e.preventDefault();
@@ -727,7 +938,7 @@ $$Format 3.00
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [cuePointTypes, dropCuePoint, togglePlayPause]);
+    }, [cuePointTypes, dropCuePoint, togglePlayPause, selectedCuePoint, deleteCuePoint]);
 
     // Scroll active cue into view
     useEffect(() => {
@@ -738,6 +949,29 @@ $$Format 3.00
             }
         }
     }, [activeCueId]);
+
+    // Disable Lenis smooth scroll on this page (prevents scrolling issues)
+    useEffect(() => {
+        // Disable Lenis multiple ways
+        const lenisInstance = (window as any).lenis;
+        if (lenisInstance) {
+            lenisInstance.destroy();
+        }
+        
+        // Also try to stop it via data attribute
+        document.documentElement.setAttribute('data-lenis-prevent', 'true');
+        document.body.setAttribute('data-lenis-prevent', 'true');
+        
+        // Remove any lenis-related classes
+        document.documentElement.classList.remove('lenis', 'lenis-smooth');
+        document.body.classList.remove('lenis', 'lenis-smooth');
+
+        return () => {
+            // Clean up
+            document.documentElement.removeAttribute('data-lenis-prevent');
+            document.body.removeAttribute('data-lenis-prevent');
+        };
+    }, []);
 
     // Render cue points on waveform
     useEffect(() => {
@@ -781,9 +1015,7 @@ $$Format 3.00
 
             marker.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (confirm(`Delete cue point "${type.name}" at ${point.timecode}?`)) {
-                    deleteCuePoint(point.id);
-                }
+                // Do nothing - waveform markers are not interactive
             });
 
             container.style.position = 'relative';
@@ -968,6 +1200,219 @@ $$Format 3.00
 
                                 {/* Right Controls */}
                                 <div className="flex items-center gap-2">
+                                    {/* MIDI Toggle */}
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <button 
+                                                className={`p-2 rounded-lg border transition-all ${
+                                                    midiEnabled
+                                                        ? 'bg-green-500/20 border-green-500/40 hover:bg-green-500/30'
+                                                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                                }`}
+                                            >
+                                                <div className="relative">
+                                                    <span className="text-[10px] font-mono font-bold" style={{ color: midiEnabled ? '#4ade80' : 'rgba(255,255,255,0.6)' }}>
+                                                        MTC
+                                                    </span>
+                                                    {midiEnabled && (
+                                                        <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                                                    )}
+                                                </div>
+                                            </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-64 bg-black/95 backdrop-blur-xl border-white/20 p-3 z-[100]">
+                                            <div className="space-y-2">
+                                                <div className="text-xs text-white/40 tracking-wider uppercase mb-2">MIDI Timecode</div>
+                                                <button
+                                                    onClick={() => setMidiEnabled(!midiEnabled)}
+                                                    className={`w-full px-3 py-2 rounded-lg text-xs transition-all font-medium ${
+                                                        midiEnabled
+                                                            ? 'bg-green-500/20 text-green-400 border border-green-500/40 hover:bg-green-500/30'
+                                                            : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
+                                                    }`}
+                                                >
+                                                    {midiEnabled ? '● MTC Active' : 'Enable MTC'}
+                                                </button>
+                                                {availableMidiOutputs.length > 0 && (
+                                                    <>
+                                                        <div className="text-[10px] text-white/40 mt-3 mb-1">MIDI Output Device</div>
+                                                        <select
+                                                            value={midiOutput?.id || ''}
+                                                            onChange={(e) => {
+                                                                const output = availableMidiOutputs.find(o => o.id === e.target.value);
+                                                                if (output) setMidiOutput(output);
+                                                            }}
+                                                            className="w-full px-2 py-1.5 bg-white/5 border border-white/20 rounded-lg text-xs text-white/80 focus:outline-none focus:border-white/40"
+                                                        >
+                                                            {availableMidiOutputs.map(output => (
+                                                                <option key={output.id} value={output.id} className="bg-black">
+                                                                    {output.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </>
+                                                )}
+                                                {availableMidiOutputs.length === 0 && (
+                                                    <div className="text-[10px] text-white/30 mt-2 p-2 bg-white/5 rounded">
+                                                        No MIDI devices found
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+
+                                    {/* Export Config */}
+                                    <Popover open={showExportConfig} onOpenChange={setShowExportConfig}>
+                                        <PopoverTrigger asChild>
+                                            <button className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
+                                                <Download className="h-3.5 w-3.5 text-white/60" strokeWidth={1.5} />
+                                            </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent 
+                                            className="w-96 bg-black/95 backdrop-blur-xl border-white/20 p-0 z-[100]"
+                                            data-lenis-prevent
+                                        >
+                                            <div className="max-h-[80vh] overflow-y-auto p-4 space-y-3" data-lenis-prevent>
+                                                <div className="text-xs text-white/40 tracking-wider uppercase">Export Configuration</div>
+                                                
+                                                {/* Show Control Format Toggle */}
+                                                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                                                    <div className="text-[10px] text-white/40 mb-2">Show Control Format</div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => setScListFormat('SMPTE')}
+                                                            className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                                                                scListFormat === 'SMPTE'
+                                                                    ? 'bg-white/20 text-white border border-white/30'
+                                                                    : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10'
+                                                            }`}
+                                                        >
+                                                            SMPTE
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setScListFormat('MIDI')}
+                                                            className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                                                                scListFormat === 'MIDI'
+                                                                    ? 'bg-white/20 text-white border border-white/30'
+                                                                    : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10'
+                                                            }`}
+                                                        >
+                                                            MIDI
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Export config for each type */}
+                                                <div className="space-y-3">
+                                                    {cuePointTypes.map((type) => {
+                                                        const IconComponent = ICON_MAP[type.icon];
+                                                        return (
+                                                            <div
+                                                                key={type.id}
+                                                                className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-2"
+                                                            >
+                                                                <div className="flex items-center gap-2">
+                                                                    <div
+                                                                        className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0"
+                                                                        style={{ backgroundColor: `${type.color}40` }}
+                                                                    >
+                                                                        {IconComponent && <IconComponent className="w-3 h-3" style={{ color: type.color }} strokeWidth={1.5} />}
+                                                                    </div>
+                                                                    <span className="text-xs text-white/80 font-medium">{type.name}</span>
+                                                                </div>
+                                                                
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    <div>
+                                                                        <label className="text-[10px] text-white/40 block mb-1">Cuelist #</label>
+                                                                        <input
+                                                                            type="number"
+                                                                            min="1"
+                                                                            value={type.exportConfig?.cueListNumber || ''}
+                                                                            onChange={(e) => {
+                                                                                const value = e.target.value ? parseInt(e.target.value) : undefined;
+                                                                                updateExportConfig(type.id, { 
+                                                                                    cueListNumber: value,
+                                                                                    subNumber: value ? undefined : type.exportConfig?.subNumber
+                                                                                });
+                                                                            }}
+                                                                            placeholder="Auto"
+                                                                            disabled={!!type.exportConfig?.subNumber}
+                                                                            className="w-full px-2 py-1.5 bg-white/5 border border-white/20 rounded text-xs text-white/80 focus:outline-none focus:border-white/40 placeholder:text-white/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-[10px] text-white/40 block mb-1">Sub #</label>
+                                                                        <input
+                                                                            type="number"
+                                                                            min="1"
+                                                                            value={type.exportConfig?.subNumber || ''}
+                                                                            onChange={(e) => {
+                                                                                const value = e.target.value ? parseInt(e.target.value) : undefined;
+                                                                                updateExportConfig(type.id, { 
+                                                                                    subNumber: value,
+                                                                                    cueListNumber: value ? undefined : type.exportConfig?.cueListNumber
+                                                                                });
+                                                                            }}
+                                                                            placeholder="None"
+                                                                            disabled={!!type.exportConfig?.cueListNumber}
+                                                                            className="w-full px-2 py-1.5 bg-white/5 border border-white/20 rounded text-xs text-white/80 focus:outline-none focus:border-white/40 placeholder:text-white/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div>
+                                                                    <label className="text-[10px] text-white/40 block mb-1">Show Control Track Label</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={type.exportConfig?.showControlTrack || ''}
+                                                                        onChange={(e) => updateExportConfig(type.id, { 
+                                                                            showControlTrack: e.target.value || undefined 
+                                                                        })}
+                                                                        placeholder={type.name}
+                                                                        className="w-full px-2 py-1.5 bg-white/5 border border-white/20 rounded text-xs text-white/80 focus:outline-none focus:border-white/40 placeholder:text-white/30"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                {/* Export buttons */}
+                                                <div className="pt-3 border-t border-white/10 space-y-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            exportToEOS();
+                                                            setShowExportConfig(false);
+                                                        }}
+                                                        className="w-full px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-xs text-white/80 transition-all flex items-center justify-center gap-2 font-medium"
+                                                    >
+                                                        <Download className="w-3.5 h-3.5" strokeWidth={1.5} />
+                                                        Export All Types
+                                                    </button>
+                                                    
+                                                    {cuePointTypes.length > 0 && (
+                                                        <div className="space-y-1">
+                                                            <div className="text-[10px] text-white/30 px-1">Export Individual:</div>
+                                                            {cuePointTypes.map(type => (
+                                                                <button
+                                                                    key={type.id}
+                                                                    onClick={() => {
+                                                                        exportToEOS(type.id);
+                                                                        setShowExportConfig(false);
+                                                                    }}
+                                                                    className="w-full px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white/60 transition-all flex items-center gap-2"
+                                                                >
+                                                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: type.color }} />
+                                                                    {type.name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                    
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <button className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
@@ -1067,71 +1512,12 @@ $$Format 3.00
                                                     </button>
                                                 </div>
                                                 
-                                                <div className="pt-2 border-t border-white/10">
-                                                    <div className="text-xs text-white/40 mb-2">MIDI Timecode</div>
-                                                    <button
-                                                        onClick={() => setMidiEnabled(!midiEnabled)}
-                                                        className={`w-full px-2 py-1.5 rounded-lg text-xs transition-all ${
-                                                            midiEnabled
-                                                                ? 'bg-green-500/20 text-green-400 border border-green-500/40'
-                                                                : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
-                                                        }`}
-                                                    >
-                                                        {midiEnabled ? '● MTC Active' : 'Enable MTC'}
-                                                    </button>
-                                                    {availableMidiOutputs.length > 0 && (
-                                                        <select
-                                                            value={midiOutput?.id || ''}
-                                                            onChange={(e) => {
-                                                                const output = availableMidiOutputs.find(o => o.id === e.target.value);
-                                                                if (output) setMidiOutput(output);
-                                                            }}
-                                                            className="w-full mt-1 px-2 py-1.5 bg-white/5 border border-white/20 rounded-lg text-xs text-white/80 focus:outline-none focus:border-white/40"
-                                                        >
-                                                            {availableMidiOutputs.map(output => (
-                                                                <option key={output.id} value={output.id} className="bg-black">
-                                                                    {output.name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    )}
-                                                    {availableMidiOutputs.length === 0 && (
-                                                        <div className="text-[10px] text-white/30 mt-1">
-                                                            No MIDI devices found
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                
                                                 <button
                                                     onClick={() => setAudioFile(null)}
                                                     className="w-full px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white/60 transition-all"
                                                 >
                                                     Change File
                                                 </button>
-                                                <div className="pt-2 border-t border-white/10">
-                                                    <div className="text-xs text-white/40 mb-2">Export to EOS</div>
-                                                    <button
-                                                        onClick={() => exportToEOS()}
-                                                        className="w-full px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white/60 transition-all flex items-center justify-center gap-2"
-                                                    >
-                                                        <Download className="w-3 h-3" strokeWidth={1.5} />
-                                                        All Types
-                                                    </button>
-                                                    {cuePointTypes.length > 0 && (
-                                                        <div className="mt-1 space-y-1">
-                                                            {cuePointTypes.map(type => (
-                                                                <button
-                                                                    key={type.id}
-                                                                    onClick={() => exportToEOS(type.id)}
-                                                                    className="w-full px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white/60 transition-all flex items-center justify-center gap-2"
-                                                                >
-                                                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: type.color }} />
-                                                                    {type.name}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
                                             </div>
                                         </PopoverContent>
                                     </Popover>
@@ -1139,8 +1525,8 @@ $$Format 3.00
                             </div>
 
                             {/* Waveform */}
-                            <div className="flex-1 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 overflow-hidden touch-none" style={{ touchAction: 'none' }}>
-                                <div ref={waveformRef} className="w-full overflow-x-auto touch-none mb-4" style={{ touchAction: 'none' }} />
+                            <div className="flex-1 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 overflow-hidden">
+                                <div ref={waveformRef} className="w-full overflow-x-auto mb-4" />
                                 
                                 {/* Mini Timelines for each cue type */}
                                 {cuePointTypes.length > 0 && (
@@ -1164,6 +1550,7 @@ $$Format 3.00
                                                         {/* Cue point icons */}
                                                         {typeCuePoints.map((cuePoint) => {
                                                             const position = currentDuration > 0 ? (cuePoint.time / currentDuration) * 100 : 0;
+                                                            const isSelected = selectedCuePoint === cuePoint.id;
                                                             return (
                                                                 <div
                                                                     key={cuePoint.id}
@@ -1171,12 +1558,20 @@ $$Format 3.00
                                                                     style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
                                                                     title={`${cuePoint.name || 'Cue'} - ${cuePoint.timecode}`}
                                                                     onClick={() => {
-                                                                        if (wavesurferRef.current) {
-                                                                            wavesurferRef.current.setTime(cuePoint.time);
-                                                                        }
+                                                                        setSelectedCuePoint(cuePoint.id);
                                                                     }}
                                                                 >
-                                                                    {IconComponent && <IconComponent className="w-4 h-4" style={{ color: type.color }} strokeWidth={1.5} />}
+                                                                    <div 
+                                                                        className="relative"
+                                                                        style={{
+                                                                            filter: isSelected ? `drop-shadow(0 0 4px ${type.color})` : 'none'
+                                                                        }}
+                                                                    >
+                                                                        {IconComponent && <IconComponent className="w-4 h-4" style={{ color: type.color, opacity: isSelected ? 1 : 0.8 }} strokeWidth={isSelected ? 2 : 1.5} />}
+                                                                        {isSelected && (
+                                                                            <div className="absolute -inset-1 border-2 rounded" style={{ borderColor: type.color }} />
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             );
                                                         })}
@@ -1236,7 +1631,8 @@ $$Format 3.00
                                         </div>
                                         <div 
                                             ref={cueListRef}
-                                            className="flex-1 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent pr-1"
+                                            className="flex-1 overflow-y-auto space-y-1.5 pr-1"
+                                            data-lenis-prevent
                                         >
                                             {trackCuePoints.map((point) => {
                                                 const type = cuePointTypes.find(t => t.id === point.typeId);
