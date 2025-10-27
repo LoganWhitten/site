@@ -55,7 +55,13 @@ const DEFAULT_CUE_TYPES = [
     { name: 'Direction', icon: 'Triangle', color: '#6bffb4' },
 ];
 
-const KEYBOARD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+// All available keyboard keys for cue point types
+const KEYBOARD_KEYS = [
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+    'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p',
+    'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l',
+    'z', 'x', 'c', 'v', 'b', 'n', 'm'
+];
 
 const STORAGE_KEYS = {
     FRAME_RATE: 'pointcue-frame-rate',
@@ -92,9 +98,23 @@ export default function Page() {
     const [scListFormat, setScListFormat] = useState<'SMPTE' | 'MIDI'>('SMPTE');
     const cueListRef = useRef<HTMLDivElement>(null);
     const lastMtcTimeRef = useRef(0);
-    const midiAccessRef = useRef<MIDIAccess | null>(null);
     const [selectedCuePoint, setSelectedCuePoint] = useState<string | null>(null);
-    const midiInitializing = useRef(false);
+    const midiOutputRef = useRef<MIDIOutput | null>(null);
+    const midiEnabledRef = useRef(false);
+    const currentTrackIdRef = useRef<string | null>(null);
+
+    // Keep refs in sync with state
+    useEffect(() => {
+        midiOutputRef.current = midiOutput;
+    }, [midiOutput]);
+
+    useEffect(() => {
+        midiEnabledRef.current = midiEnabled;
+    }, [midiEnabled]);
+
+    useEffect(() => {
+        currentTrackIdRef.current = currentTrackId;
+    }, [currentTrackId]);
 
     // Get current track's cue point types
     const currentTrack = audioTracks.find(t => t.id === currentTrackId);
@@ -102,153 +122,22 @@ export default function Page() {
 
     // Initialize MIDI
     useEffect(() => {
-        const initMIDI = async () => {
-            if (!navigator.requestMIDIAccess) {
-                console.error('Web MIDI API not supported');
-                return;
-            }
-
-            if (midiInitializing.current) {
-                return; // Prevent concurrent initialization
-            }
-
-            midiInitializing.current = true;
-
-            try {
-                // Clean up old access
-                if (midiAccessRef.current) {
-                    midiAccessRef.current.onstatechange = null;
-                }
-
-                // Force a fresh MIDI access request
-                const midiAccess = await navigator.requestMIDIAccess({ sysex: true });
-                midiAccessRef.current = midiAccess;
-                
-                const updateOutputs = () => {
+        if (navigator.requestMIDIAccess) {
+            navigator.requestMIDIAccess({ sysex: true })
+                .then((midiAccess) => {
                     const outputs = Array.from(midiAccess.outputs.values());
                     setAvailableMidiOutputs(outputs);
-                    
-                    // Update current output if needed
-                    setMidiOutput(prev => {
-                        if (!prev && outputs.length > 0) {
-                            return outputs[0];
-                        }
-                        if (prev && !outputs.find(o => o.id === prev.id)) {
-                            // Current output disconnected, select first available
-                            return outputs.length > 0 ? outputs[0] : null;
-                        }
-                        if (prev) {
-                            // Refresh the output reference
-                            return outputs.find(o => o.id === prev.id) || prev;
-                        }
-                        return prev;
-                    });
-                };
-                
-                // Initial update
-                updateOutputs();
-                
-                // Listen for device changes
-                midiAccess.onstatechange = () => {
-                    updateOutputs();
-                };
-
-                console.log('MIDI initialized successfully');
-            } catch (err) {
-                console.error('MIDI Access Error:', err);
-            } finally {
-                midiInitializing.current = false;
-            }
-        };
-
-        // Initialize on mount
-        initMIDI();
-
-        // Reinitialize when MIDI is enabled (forces fresh connection)
-        if (midiEnabled) {
-            // Use a small delay to ensure clean reinitialization
-            const timeoutId = setTimeout(() => initMIDI(), 100);
-            return () => {
-                clearTimeout(timeoutId);
-                if (midiAccessRef.current) {
-                    midiAccessRef.current.onstatechange = null;
-                }
-            };
-        }
-
-        return () => {
-            if (midiAccessRef.current) {
-                midiAccessRef.current.onstatechange = null;
-            }
-        };
-    }, [midiEnabled]);
-
-    // Send MTC Full Frame message
-    const sendMTCFullFrame = useCallback(async (timeInSeconds: number) => {
-        if (!midiEnabled) return;
-        
-        // Check if we need to reinitialize MIDI
-        if (!midiAccessRef.current && !midiInitializing.current) {
-            console.log('MIDI access lost, reinitializing...');
-            if (navigator.requestMIDIAccess) {
-                try {
-                    midiInitializing.current = true;
-                    const midiAccess = await navigator.requestMIDIAccess({ sysex: true });
-                    midiAccessRef.current = midiAccess;
-                    
-                    const outputs = Array.from(midiAccess.outputs.values());
-                    setAvailableMidiOutputs(outputs);
-                    
                     if (outputs.length > 0) {
                         setMidiOutput(outputs[0]);
                     }
-                    
-                    console.log('MIDI reinitialized successfully');
-                } catch (err) {
-                    console.error('MIDI reinit error:', err);
-                    return;
-                } finally {
-                    midiInitializing.current = false;
-                }
-            } else {
-                return;
-            }
+                })
+                .catch((err) => {
+                    console.error('MIDI Access Error:', err);
+                });
         }
-        
-        // Get fresh MIDI output from ref if available
-        const currentOutput = midiAccessRef.current && midiOutput
-            ? Array.from(midiAccessRef.current.outputs.values()).find(o => o.id === midiOutput.id) || midiOutput
-            : midiOutput;
-            
-        if (!currentOutput) return;
+    }, []);
 
-        try {
-            const hours = Math.floor(timeInSeconds / 3600);
-            const minutes = Math.floor((timeInSeconds % 3600) / 60);
-            const seconds = Math.floor(timeInSeconds % 60);
-            const frames = Math.floor((timeInSeconds % 1) * frameRate);
 
-            // Frame rate code: 0 = 24fps, 1 = 25fps, 2 = 29.97fps (drop), 3 = 30fps
-            const frameRateCode = frameRate === 24 ? 0 : 3;
-
-            // MTC Full Frame SysEx message
-            // F0 7F 7F 01 01 hh mm ss ff F7
-            const message = [
-                0xF0, 0x7F, 0x7F, 0x01, 0x01,
-                (frameRateCode << 5) | hours,
-                minutes,
-                seconds,
-                frames,
-                0xF7
-            ];
-            
-            currentOutput.send(message);
-        } catch (error) {
-            console.error('MIDI send error:', error);
-            // Clear the MIDI access ref to force reinitialization on next call
-            midiAccessRef.current = null;
-        }
-    }, [midiOutput, midiEnabled, frameRate]);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -418,21 +307,40 @@ export default function Page() {
                 const time = wavesurfer.getCurrentTime();
                 setCurrentTime(time);
                 
-                // Send MTC full frame messages at frame rate intervals
-                if (midiEnabled && midiOutput) {
+                // Send MTC full frame messages at frame rate intervals using refs
+                if (midiEnabledRef.current && midiOutputRef.current) {
                     const timeSinceLastMTC = time - lastMtcTimeRef.current;
                     const frameInterval = 1 / frameRate; // One full frame per frame period
                     
                     if (timeSinceLastMTC >= frameInterval) {
-                        sendMTCFullFrame(time);
-                        lastMtcTimeRef.current = time;
+                        try {
+                            const hours = Math.floor(time / 3600);
+                            const minutes = Math.floor((time % 3600) / 60);
+                            const seconds = Math.floor(time % 60);
+                            const frames = Math.floor((time % 1) * frameRate);
+                            const frameRateCode = frameRate === 24 ? 0 : 3;
+                            
+                            const message = [
+                                0xF0, 0x7F, 0x7F, 0x01, 0x01,
+                                (frameRateCode << 5) | hours,
+                                minutes,
+                                seconds,
+                                frames,
+                                0xF7
+                            ];
+                            
+                            midiOutputRef.current.send(message);
+                            lastMtcTimeRef.current = time;
+                        } catch (error) {
+                            console.error('MIDI send error:', error);
+                        }
                     }
                 }
                 
                 // Check if we've hit any cue points (within 0.1 second tolerance)
                 // Use callback to get fresh state
                 setAudioTracks(tracks => {
-                    const track = tracks.find(t => t.id === currentTrackId);
+                    const track = tracks.find(t => t.id === currentTrackIdRef.current);
                     if (track) {
                         const hitCue = track.cuePoints.find(cue => {
                             const diff = Math.abs(cue.time - time);
@@ -462,22 +370,37 @@ export default function Page() {
             wavesurfer.on('seeking', () => {
                 const time = wavesurfer.getCurrentTime();
                 setCurrentTime(time);
-                // Send full frame on seek for immediate timecode sync
-                if (midiEnabled && midiOutput) {
-                    sendMTCFullFrame(time);
+                
+                // Reset the last MTC time to allow immediate sending after seek
+                lastMtcTimeRef.current = time;
+                
+                // Send full frame on seek for immediate timecode sync using refs
+                if (midiEnabledRef.current && midiOutputRef.current) {
+                    try {
+                        const hours = Math.floor(time / 3600);
+                        const minutes = Math.floor((time % 3600) / 60);
+                        const seconds = Math.floor(time % 60);
+                        const frames = Math.floor((time % 1) * frameRate);
+                        const frameRateCode = frameRate === 24 ? 0 : 3;
+                        
+                        const message = [
+                            0xF0, 0x7F, 0x7F, 0x01, 0x01,
+                            (frameRateCode << 5) | hours,
+                            minutes,
+                            seconds,
+                            frames,
+                            0xF7
+                        ];
+                        
+                        midiOutputRef.current.send(message);
+                    } catch (error) {
+                        console.error('MIDI send error:', error);
+                    }
                 }
             });
 
             wavesurfer.on('play', () => {
                 setIsPlaying(true);
-                // Refresh MIDI output when playback starts (fixes suspension issues)
-                if (midiEnabled && midiAccessRef.current && midiOutput) {
-                    const outputs = Array.from(midiAccessRef.current.outputs.values());
-                    const refreshedOutput = outputs.find(o => o.id === midiOutput.id);
-                    if (refreshedOutput) {
-                        setMidiOutput(refreshedOutput);
-                    }
-                }
             });
 
             wavesurfer.on('pause', () => {
@@ -493,7 +416,15 @@ export default function Page() {
                 URL.revokeObjectURL(url);
             };
         }
-    }, [audioFile, frameRate, sendMTCFullFrame]);
+    }, [audioFile, frameRate]);
+
+    // Switch to a different track
+    const switchToTrack = useCallback((trackId: string, file: File) => {
+        setCurrentTrackId(trackId);
+        setAudioFile(file);
+        setCurrentTime(0);
+        setIsPlaying(false);
+    }, []);
 
     // Add audio tracks
     const addAudioTracks = useCallback((files: File[]) => {
@@ -522,7 +453,7 @@ export default function Page() {
         if (!currentTrackId && newTracks.length > 0) {
             switchToTrack(newTracks[0].id, newTracks[0].file);
         }
-    }, [currentTrackId]);
+    }, [currentTrackId, switchToTrack]);
 
     // Handle file drop
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -561,16 +492,8 @@ export default function Page() {
         }
     };
 
-    // Switch to a different track
-    const switchToTrack = (trackId: string, file: File) => {
-        setCurrentTrackId(trackId);
-        setAudioFile(file);
-        setCurrentTime(0);
-        setIsPlaying(false);
-    };
-
     // Remove a track
-    const removeTrack = (trackId: string) => {
+    const removeTrack = useCallback((trackId: string) => {
         // Remove the track from the list (cue points are stored with the track)
         setAudioTracks(prev => prev.filter(t => t.id !== trackId));
         
@@ -583,25 +506,27 @@ export default function Page() {
                 setAudioFile(null);
             }
         }
-    };
+    }, [currentTrackId, audioTracks, switchToTrack]);
 
     // Play/Pause toggle
-    const togglePlayPause = () => {
+    const togglePlayPause = useCallback(() => {
         if (wavesurferRef.current) {
             wavesurferRef.current.playPause();
         }
-    };
+    }, []);
 
     // Add cue point type
     const addCuePointType = () => {
         if (!currentTrack) return;
-        if (cuePointTypes.length >= 10) return;
         
         const availableKey = KEYBOARD_KEYS.find(
             key => !cuePointTypes.some(type => type.key === key)
         );
         
-        if (!availableKey) return;
+        if (!availableKey) {
+            alert('No more keyboard keys available. Maximum of ' + KEYBOARD_KEYS.length + ' cue types.');
+            return;
+        }
 
         const newType: CuePointType = {
             id: crypto.randomUUID(),
@@ -909,6 +834,9 @@ $$Format 3.00
             // Ignore if typing in an input
             if (e.target instanceof HTMLInputElement) return;
 
+            // Ignore if modifier keys are held (allow browser shortcuts)
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+
             // Delete key for selected cue point
             if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCuePoint) {
                 e.preventDefault();
@@ -953,7 +881,7 @@ $$Format 3.00
     // Disable Lenis smooth scroll on this page (prevents scrolling issues)
     useEffect(() => {
         // Disable Lenis multiple ways
-        const lenisInstance = (window as any).lenis;
+        const lenisInstance = (window as typeof window & { lenis?: { destroy: () => void } }).lenis;
         if (lenisInstance) {
             lenisInstance.destroy();
         }
@@ -1034,10 +962,10 @@ $$Format 3.00
                     </p>
                 </div>
             ) : (
-            <div className="w-full h-[calc(100vh-1rem)] flex gap-4">
+            <div className="w-full max-w-full h-[calc(100vh-1rem)] flex gap-4 overflow-hidden">
                 {/* Left Sidebar - File List */}
                 <div 
-                    className="w-80 flex flex-col"
+                    className="w-80 flex-shrink-0 flex flex-col"
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -1108,98 +1036,127 @@ $$Format 3.00
 
                 {/* Main Content */}
                 {audioFile ? (
-                    <div className="flex-1 flex gap-4">
+                    <div className="flex-1 min-w-0 flex gap-4">
                         {/* Center Column - Waveform & Controls */}
-                        <div className="flex-1 flex flex-col space-y-4">
+                        <div className="flex-1 min-w-0 flex flex-col space-y-4">
                             {/* Top Bar - Cue Type Icons & Controls */}
-                            <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 relative z-20">
-                                {/* Cue Type Icons */}
-                                <div className="flex items-center gap-2">
-                                    {cuePointTypes.map((type) => {
-                                        const IconComponent = ICON_MAP[type.icon];
-                                        const isActiveType = activeTypeId === type.id;
-                                        return (
-                                            <Popover key={type.id}>
-                                                <PopoverTrigger asChild>
-                                                    <button
-                                                        className="group relative"
-                                                        title={`${type.name} (${type.key}) - Left click to edit, Right click to drop cue`}
-                                                        onContextMenu={(e) => {
-                                                            e.preventDefault();
-                                                            dropCuePoint(type.id);
-                                                        }}
-                                                    >
-                                                        <div 
-                                                            className="w-8 h-8 rounded-lg transition-all flex items-center justify-center"
-                                                            style={{
-                                                                backgroundColor: isActiveType ? `${type.color}80` : `${type.color}40`,
-                                                                border: `1px solid ${type.color}60`,
-                                                                transform: isActiveType ? 'scale(1.15)' : 'scale(1)',
-                                                                boxShadow: isActiveType ? `0 0 15px ${type.color}60` : 'none'
+                            <div className="flex items-center gap-4 px-4 py-3 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 relative z-20">
+                                {/* Cue Type Icons - Scrollable */}
+                                <div className="flex-1 min-w-0 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent hover:scrollbar-thumb-white/30">
+                                    <div className="flex items-center gap-2 w-max">
+                                        {cuePointTypes.map((type) => {
+                                            const IconComponent = ICON_MAP[type.icon];
+                                            const isActiveType = activeTypeId === type.id;
+                                            return (
+                                                <Popover key={type.id}>
+                                                    <PopoverTrigger asChild>
+                                                        <button
+                                                            className="group relative flex-shrink-0"
+                                                            title={`${type.name} (${type.key.toUpperCase()}) - Left click to edit, Right click to drop cue`}
+                                                            onContextMenu={(e) => {
+                                                                e.preventDefault();
+                                                                dropCuePoint(type.id);
                                                             }}
                                                         >
-                                                            {IconComponent && <IconComponent className="w-4 h-4" style={{ color: type.color }} strokeWidth={1.5} />}
-                                                        </div>
-                                                        <div className="absolute -top-1 -right-1 w-4 h-4 rounded bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center">
-                                                            <span className="text-[8px] font-mono text-white/80">{type.key}</span>
-                                                        </div>
-                                                    </button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-64 bg-black/95 backdrop-blur-xl border-white/20 p-3 z-[100]">
-                                                    <div className="space-y-3">
-                                                        <div className="text-xs text-white/40 tracking-wider uppercase">Edit {type.name}</div>
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <input
-                                                                    type="color"
-                                                                    value={type.color}
-                                                                    onChange={(e) => updateCuePointType(type.id, { color: e.target.value })}
-                                                                    className="w-8 h-8 rounded cursor-pointer bg-transparent border-0"
-                                                                />
-                                                                <select
-                                                                    value={type.icon}
-                                                                    onChange={(e) => updateCuePointType(type.id, { icon: e.target.value })}
-                                                                    className="flex-1 h-8 px-2 bg-white/5 border border-white/20 rounded text-xs cursor-pointer focus:outline-none focus:border-white/40 text-white/80"
-                                                                >
-                                                                    {DEFAULT_ICONS.map((icon) => (
-                                                                        <option key={icon} value={icon} className="bg-black">
-                                                                            {icon}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
-                                                            </div>
-                                                            <input
-                                                                value={type.name}
-                                                                onChange={(e) => updateCuePointType(type.id, { name: e.target.value })}
-                                                                className="w-full px-2 py-1.5 bg-white/5 border border-white/20 rounded text-xs text-white/80 focus:outline-none focus:border-white/40 placeholder:text-white/30"
-                                                                placeholder="Type name"
-                                                            />
-                                                            <button
-                                                                onClick={() => deleteCuePointType(type.id)}
-                                                                className="w-full px-2 py-1.5 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs text-red-400 transition-all flex items-center justify-center gap-2"
+                                                            <div 
+                                                                className="w-8 h-8 rounded-lg transition-all flex items-center justify-center"
+                                                                style={{
+                                                                    backgroundColor: isActiveType ? `${type.color}80` : `${type.color}40`,
+                                                                    border: `1px solid ${type.color}60`,
+                                                                    transform: isActiveType ? 'scale(1.15)' : 'scale(1)',
+                                                                    boxShadow: isActiveType ? `0 0 15px ${type.color}60` : 'none'
+                                                                }}
                                                             >
-                                                                <Trash2 className="w-3 h-3" strokeWidth={1.5} />
-                                                                Delete Type
-                                                            </button>
+                                                                {IconComponent && <IconComponent className="w-4 h-4" style={{ color: type.color }} strokeWidth={1.5} />}
+                                                            </div>
+                                                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded bg-black/80 backdrop-blur-xl border border-white/20 flex items-center justify-center">
+                                                                <span className="text-[8px] font-mono text-white/80">{type.key.toUpperCase()}</span>
+                                                            </div>
+                                                        </button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-64 bg-black/95 backdrop-blur-xl border-white/20 p-3 z-[100]">
+                                                        <div className="space-y-3">
+                                                            <div className="text-xs text-white/40 tracking-wider uppercase">Edit {type.name}</div>
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <input
+                                                                        type="color"
+                                                                        value={type.color}
+                                                                        onChange={(e) => updateCuePointType(type.id, { color: e.target.value })}
+                                                                        className="w-8 h-8 rounded cursor-pointer bg-transparent border-0"
+                                                                    />
+                                                                    <select
+                                                                        value={type.icon}
+                                                                        onChange={(e) => updateCuePointType(type.id, { icon: e.target.value })}
+                                                                        className="flex-1 h-8 px-2 bg-white/5 border border-white/20 rounded text-xs cursor-pointer focus:outline-none focus:border-white/40 text-white/80"
+                                                                    >
+                                                                        {DEFAULT_ICONS.map((icon) => (
+                                                                            <option key={icon} value={icon} className="bg-black">
+                                                                                {icon}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                                <input
+                                                                    value={type.name}
+                                                                    onChange={(e) => updateCuePointType(type.id, { name: e.target.value })}
+                                                                    className="w-full px-2 py-1.5 bg-white/5 border border-white/20 rounded text-xs text-white/80 focus:outline-none focus:border-white/40 placeholder:text-white/30"
+                                                                    placeholder="Type name"
+                                                                />
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="text-[10px] text-white/40">Key:</div>
+                                                                    <select
+                                                                        value={type.key}
+                                                                        onChange={(e) => {
+                                                                            const newKey = e.target.value;
+                                                                            if (!cuePointTypes.some(t => t.id !== type.id && t.key === newKey)) {
+                                                                                updateCuePointType(type.id, { key: newKey });
+                                                                            }
+                                                                        }}
+                                                                        className="flex-1 h-7 px-2 bg-white/10 border border-white/20 rounded text-xs font-mono text-white/80 cursor-pointer focus:outline-none focus:border-white/40"
+                                                                    >
+                                                                        {KEYBOARD_KEYS.map((key) => {
+                                                                            const isUsed = cuePointTypes.some(t => t.id !== type.id && t.key === key);
+                                                                            return (
+                                                                                <option 
+                                                                                    key={key} 
+                                                                                    value={key} 
+                                                                                    disabled={isUsed}
+                                                                                    className="bg-black"
+                                                                                >
+                                                                                    {key.toUpperCase()} {isUsed ? '(used)' : ''}
+                                                                                </option>
+                                                                            );
+                                                                        })}
+                                                                    </select>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => deleteCuePointType(type.id)}
+                                                                    className="w-full px-2 py-1.5 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs text-red-400 transition-all flex items-center justify-center gap-2"
+                                                                >
+                                                                    <Trash2 className="w-3 h-3" strokeWidth={1.5} />
+                                                                    Delete Type
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </PopoverContent>
-                                            </Popover>
-                                        );
-                                    })}
-                                    {cuePointTypes.length < 10 && (
-                                        <button
-                                            onClick={addCuePointType}
-                                            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center justify-center"
-                                            title="Add cue type"
-                                        >
-                                            <Plus className="w-4 h-4 text-white/40" strokeWidth={1.5} />
-                                        </button>
-                                    )}
+                                                    </PopoverContent>
+                                                </Popover>
+                                            );
+                                        })}
+                                        {cuePointTypes.length < KEYBOARD_KEYS.length && (
+                                            <button
+                                                onClick={addCuePointType}
+                                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center justify-center flex-shrink-0"
+                                                title={`Add cue type (${KEYBOARD_KEYS.length - cuePointTypes.length} keys available)`}
+                                            >
+                                                <Plus className="w-4 h-4 text-white/40" strokeWidth={1.5} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Right Controls */}
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-shrink-0">
                                     {/* MIDI Toggle */}
                                     <Popover>
                                         <PopoverTrigger asChild>
@@ -1462,11 +1419,31 @@ $$Format 3.00
                                                                     className="flex-1 bg-transparent border-0 text-xs text-white/80 focus:outline-none placeholder:text-white/30"
                                                                     placeholder="Type name"
                                                                 />
-                                                                <div className="px-1.5 py-0.5 rounded bg-white/10 border border-white/10">
-                                                                    <span className="text-[10px] font-mono text-white/60">
-                                                                        {type.key}
-                                                                    </span>
-                                                                </div>
+                                                                <select
+                                                                    value={type.key}
+                                                                    onChange={(e) => {
+                                                                        const newKey = e.target.value;
+                                                                        // Check if key is already used
+                                                                        if (!cuePointTypes.some(t => t.id !== type.id && t.key === newKey)) {
+                                                                            updateCuePointType(type.id, { key: newKey });
+                                                                        }
+                                                                    }}
+                                                                    className="w-10 h-6 px-1 bg-white/10 border border-white/20 rounded text-[10px] font-mono text-white/80 cursor-pointer focus:outline-none focus:border-white/40 text-center"
+                                                                >
+                                                                    {KEYBOARD_KEYS.map((key) => {
+                                                                        const isUsed = cuePointTypes.some(t => t.id !== type.id && t.key === key);
+                                                                        return (
+                                                                            <option 
+                                                                                key={key} 
+                                                                                value={key} 
+                                                                                disabled={isUsed}
+                                                                                className="bg-black"
+                                                                            >
+                                                                                {key.toUpperCase()}
+                                                                            </option>
+                                                                        );
+                                                                    })}
+                                                                </select>
                                                                 <button
                                                                     onClick={() => deleteCuePointType(type.id)}
                                                                     className="p-1 rounded hover:bg-white/10 transition-all"
@@ -1525,21 +1502,21 @@ $$Format 3.00
                             </div>
 
                             {/* Waveform */}
-                            <div className="flex-1 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 overflow-hidden">
-                                <div ref={waveformRef} className="w-full overflow-x-auto mb-4" />
+                            <div className="flex-1 flex flex-col rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 overflow-hidden">
+                                <div ref={waveformRef} className="w-full overflow-x-auto mb-4 flex-shrink-0" />
                                 
                                 {/* Mini Timelines for each cue type */}
                                 {cuePointTypes.length > 0 && (
-                                    <div className="relative mt-4 border-t border-white/10 pt-4">
+                                    <div className="relative flex-1 flex flex-col border-t border-white/10 pt-4 overflow-hidden">
                                         {/* Global playback cursor - spans all timelines */}
                                         <div
-                                            className="absolute top-0 bottom-0 w-[2px] bg-white/80 z-30 pointer-events-none shadow-lg"
+                                            className="absolute top-4 bottom-0 w-[2px] bg-white/80 z-30 pointer-events-none shadow-lg"
                                             style={{ 
                                                 left: `${((wavesurferRef.current?.getDuration() || 0) > 0 ? (currentTime / (wavesurferRef.current?.getDuration() || 1)) * 100 : 0)}%`
                                             }}
                                         />
                                         
-                                        <div className="space-y-2">
+                                        <div className="flex-1 space-y-2 overflow-y-auto pr-2" data-lenis-prevent>
                                             {cuePointTypes.map((type) => {
                                                 const typeCuePoints = currentTrack?.cuePoints.filter(cp => cp.typeId === type.id) || [];
                                                 const currentDuration = wavesurferRef.current?.getDuration() || 0;
@@ -1599,7 +1576,7 @@ $$Format 3.00
                         </div>
 
                         {/* Right Column - Timecode & Cue Points */}
-                        <div className="w-80 flex flex-col space-y-4">
+                        <div className="w-80 flex-shrink-0 flex flex-col space-y-4">
                             {/* Timecode Display */}
                             <div 
                                 className="px-4 py-6 rounded-2xl backdrop-blur-xl border transition-all duration-300 text-center relative z-10"
@@ -1683,7 +1660,7 @@ $$Format 3.00
                                     <div className="flex-1 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-4 flex items-center justify-center">
                                         <div className="text-xs text-white/30 text-center">
                                             No cue points yet<br />
-                                            Press 1-0 to drop points
+                                            Press any assigned key to drop points
                                         </div>
                                     </div>
                                 );
