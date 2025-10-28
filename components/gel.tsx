@@ -30,7 +30,7 @@ export default function Gel() {
         </div>
       </div>
       <div
-        className="h-40 w-full md:w-40 flex rounded-lg z-10 outline outline-white outline-[.5px] place-content-center place-items-center text-white"
+        className="h-40 w-full md:w-40 flex rounded-lg z-10 outline-white outline-[.5px] place-content-center place-items-center text-white"
         style={{ backgroundColor: color || "#000000" }}
       >
         {search}
