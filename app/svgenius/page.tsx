@@ -108,7 +108,7 @@ export default function Page() {
     const firstZIndex = d.indexOf('Z');
     const firstSubpath = firstZIndex !== -1 ? d.substring(0, firstZIndex + 1) : d;
     // Replace the path with groups
-    const newSvg = svgString.replace(/<path [^>]*\/>/, `<g id="etc_symbol_base"><path fill="white" d="${firstSubpath}"/></g><g id="etc_symbol_outline"><path fill="none" stroke="black" stroke-width="1" d="${d}"/></g>`);
+    const newSvg = svgString.replace(/<path [^>]*\/>/, `<g id="etc_symbol_base"><path fill="white" d="${firstSubpath}"/></g><g id="etc_symbol_outline"><path fill="none" stroke="black" stroke-width="3" d="${d}"/></g>`);
     // Set viewBox
     const withViewBox = newSvg.replace(/<svg ([^>]*)>/, `<svg $1 viewBox="0 0 ${width} ${height}">`);
     return withViewBox;
