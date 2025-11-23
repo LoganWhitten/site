@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-// @ts-ignore
+//@ts-expect-error: imagetracerjs has no TypeScript types
 import ImageTracer from 'imagetracerjs';
 
 export default function Page() {
