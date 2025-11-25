@@ -152,4 +152,49 @@
   .print-only {
     display: block !important;
   }
+  @page {
+    margin: 0.5in;
+    counter-reset: page;
+  }
+  .cover-page {
+    page-break-after: always;
+  }
+  .header {
+    position: fixed;
+    top: -0.5in;
+    left: 0;
+    right: 0;
+    height: 0.5in;
+    text-align: center;
+    font-size: 12px;
+    color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .footer {
+    position: fixed;
+    bottom: -1.5in;
+    left: 0;
+    right: 0;
+    height: 1.5in;
+  }
+  .footer-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 12px;
+    color: black;
+  }
+  .footer-right {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 12px;
+    color: black;
+  }
+  .page-number::after {
+    counter-increment: page;
+    content: counter(page);
+  }
 }
