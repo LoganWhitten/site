@@ -13,7 +13,6 @@ export default function RootLayout({children}: {children: ReactNode}){
   return (
     <html>
       <body className="h-svh dark w-full">
-        <ReactLenis root />
         <div className="cursor-default" >{children}</div>
       </body>
     </html>
