@@ -7,6 +7,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Command, CommandInput, CommandList, CommandItem, CommandEmpty } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
 
 interface Item {
   id: number;
@@ -20,6 +21,7 @@ interface Item {
 interface Category {
   name: string;
   notes: string;
+  enableMultiPage: boolean;
 }
 
 interface CoverInfo {
@@ -37,12 +39,12 @@ const initialItems: Item[] = [
 ];
 
 const initialCategories: Category[] = [
-  { name: "Conventionals", notes: "" },
-  { name: "Automated Lights", notes: "" },
-  { name: "Cable", notes: "" },
-  { name: "Atmospherics", notes: "" },
-  { name: "Power Distribution", notes: "" },
-  { name: "Rigging/Iron", notes: "" }
+  { name: "Conventionals", notes: "", enableMultiPage: false },
+  { name: "Automated Lights", notes: "", enableMultiPage: false },
+  { name: "Cable", notes: "", enableMultiPage: false },
+  { name: "Atmospherics", notes: "", enableMultiPage: false },
+  { name: "Power Distribution", notes: "", enableMultiPage: false },
+  { name: "Rigging/Iron", notes: "", enableMultiPage: false }
 ];
 
 const ITEMS_KEY = 'werkorder-items';
@@ -73,10 +75,13 @@ export default function WerkOrder() {
         }
         return "";
     });
-    const [categorySelectOpen, setCategorySelectOpen] = useState(false);
-    const [editCategoriesOpen, setEditCategoriesOpen] = useState(false);
     const [categoryNotesOpen, setCategoryNotesOpen] = useState<string | null>(null);
-    const [editCoverOpen, setEditCoverOpen] = useState(false);
+    const [editCategory, setEditCategory] = useState<string | null>(null);
+    const [editCategoryOpen, setEditCategoryOpen] = useState(false);
+    const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+    const [editShowOpen, setEditShowOpen] = useState(false);
+    const [enableMultiPageInput, setEnableMultiPageInput] = useState(false);
+    const [localEnableMultiPage, setLocalEnableMultiPage] = useState(false);
     const [coverInfo, setCoverInfo] = useState<CoverInfo>(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem(COVER_KEY);
@@ -122,13 +127,13 @@ export default function WerkOrder() {
     const handleCategoryAdd = (id: number) => {
         if (selectedIds.includes(id) && selectedIds.length > 1) {
             // Add new category and assign to all selected items
-            setCategories([...categories, { name: categoryInput, notes: categoryNotes }]);
+            setCategories([...categories, { name: categoryInput, notes: categoryNotes, enableMultiPage: false }]);
             setItems(items => items.map((item) => selectedIds.includes(item.id) ? { ...item, category: categoryInput } : item));
             setSelectedIds([]);
         } else {
             // Add new category for single item
             if (categoryInput && !categories.some(c => c.name === categoryInput)) {
-                setCategories([...categories, { name: categoryInput, notes: categoryNotes }]);
+                setCategories([...categories, { name: categoryInput, notes: categoryNotes, enableMultiPage: false }]);
                 setItems(items => items.map((item) => item.id === id ? { ...item, category: categoryInput } : item));
             }
         }
@@ -141,19 +146,18 @@ export default function WerkOrder() {
         setItems(items => items.map((item) => item.id === id ? { ...item, [field]: value } : item));
     };
 
-    const handleAddRow = () => {
-        if (!selectedCategory) return;
+    const handleAddRowToCategory = (cat: string) => {
         const newId = Date.now();
-        setItems(prev => [...prev, { id: newId, name: "", category: selectedCategory, active: 0, spare: 0, notes: "" }]);
+        setItems(prev => [...prev, { id: newId, name: "", category: cat, active: 0, spare: 0, notes: "" }]);
+    };
+
+    const handleAddRow = () => {
+        const category = selectedCategory || 'Uncategorized';
+        handleAddRowToCategory(category);
     };
 
     const handleDelete = (id: number) => {
         setItems(items => items.filter(item => item.id !== id));
-    };
-
-    const handleAddRowToCategory = (cat: string) => {
-        const newId = Date.now();
-        setItems(prev => [...prev, { id: newId, name: "", category: cat, active: 0, spare: 0, notes: "" }]);
     };
 
     // Focus the name input of the last item when a new row is added
@@ -192,7 +196,30 @@ export default function WerkOrder() {
         localStorage.setItem(COVER_KEY, JSON.stringify(coverInfo));
     }, [coverInfo]);
 
-    const getCategoryByName = (name: string) => categories.find(c => c.name === name);
+    const getCategoryByName = (name: string) => categories.find(c => c.name?.toLowerCase() === name?.toLowerCase());
+
+    const updateCategory = (name: string, field: keyof Category, value: any) => {
+        const category = categories.find(c => c.name?.toLowerCase() === name?.toLowerCase());
+        if (category) {
+            setCategories(categories.map(c => c === category ? { ...c, [field]: value } : c));
+        }
+    };
+
+    const deleteCategory = (name: string) => {
+        setCategories(categories.filter(c => c.name !== name));
+        setItems(items.map(item => item.category === name ? { ...item, category: '' } : item));
+        setEditCategoryOpen(false);
+    };
+
+    const handleAddCategory = () => {
+        if (categoryInput && !categories.some(c => c.name === categoryInput)) {
+            setCategories([...categories, { name: categoryInput, notes: categoryNotes, enableMultiPage: enableMultiPageInput }]);
+            setCategoryInput('');
+            setCategoryNotes('');
+            setEnableMultiPageInput(false);
+            setAddCategoryOpen(false);
+        }
+    };
 
     const groupedItems = items.reduce((acc, item) => {
         const cat = item.category || 'Uncategorized';
@@ -259,6 +286,12 @@ export default function WerkOrder() {
     return (
       <>
         <div className="no-print">
+          <div className="bg-background border-b p-4 flex items-center justify-between">
+            <h1 className="text-lg font-semibold">{coverInfo.showTitle || 'Untitled Show'}</h1>
+            <Button variant="outline" size="sm" onClick={() => setEditShowOpen(true)}>
+              Edit Show
+            </Button>
+          </div>
           <div className="p-6">
           {!selectedCategory && (
             <div className="text-sm text-muted-foreground mb-4">
@@ -283,27 +316,9 @@ export default function WerkOrder() {
                   <React.Fragment key={cat}>
                     <TableRow>
                       <TableCell colSpan={7} className="font-bold bg-muted text-center">
-                        <Popover open={categoryNotesOpen === cat} onOpenChange={(open) => setCategoryNotesOpen(open ? cat : null)}>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" className="w-full justify-center">
-                              {cat}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-80" onClick={(e) => e.stopPropagation()}>
-                            <div className="space-y-2">
-                              <h4 className="font-medium">Edit Notes for {cat}</h4>
-                              <Input
-                                value={getCategoryByName(cat)?.notes || ""}
-                                onChange={(e) => {
-                                  setCategories(categories.map(c => c.name === cat ? { ...c, notes: e.target.value } : c));
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                placeholder="Category notes"
-                                autoFocus
-                              />
-                            </div>
-                          </PopoverContent>
-                        </Popover>
+                        <Button variant="ghost" className="w-full justify-center" onClick={() => { setEditCategory(cat); setLocalEnableMultiPage(getCategoryByName(cat)?.enableMultiPage || false); setEditCategoryOpen(true); }}>
+                          {cat}
+                        </Button>
                       </TableCell>
                     </TableRow>
                     {catItems.map((item) => (
@@ -463,7 +478,7 @@ export default function WerkOrder() {
                       ))}
                       {categoryInput && !categories.some(c => c.name === categoryInput) && (
                         <CommandItem onSelect={() => {
-                          setCategories([...categories, { name: categoryInput, notes: categoryNotes }]);
+                          setCategories([...categories, { name: categoryInput, notes: categoryNotes, enableMultiPage: false }]);
                           setItems(items => items.map(item => selectedIds.includes(item.id) ? {...item, category: categoryInput} : item));
                           setBulkCategoryOpen(false);
                           setSelectedIds([]);
@@ -479,144 +494,65 @@ export default function WerkOrder() {
               </Popover>
             </div>
           )}
-          <div className="mb-6 flex items-center gap-2">
-            <Popover
-              open={categorySelectOpen}
-              onOpenChange={setCategorySelectOpen}
-            >
-              <PopoverTrigger asChild>
-                <Button variant="outline">
-                  {selectedCategory
-                    ? selectedCategory
-                    : "Select or create a category"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-0" onClick={(e) => e.stopPropagation()}>
-                <Command>
-                  <CommandInput
-                    placeholder="Type or select category..."
-                    value={categoryInput}
-                    onValueChange={setCategoryInput}
-                  />
-                  <CommandList>
-                    {categories.length === 0 && (
-                      <CommandEmpty>No categories found.</CommandEmpty>
-                    )}
-                    {categories.map((cat) => (
-                      <CommandItem
-                        key={cat.name}
-                        onSelect={() => {
-                          setSelectedCategory(cat.name);
-                          setCategorySelectOpen(false);
-                          setCategoryInput("");
-                        }}
-                      >
-                        {cat.name}
-                      </CommandItem>
-                    ))}
-                    {categoryInput && !categories.some(c => c.name === categoryInput) && (
-                      <CommandItem
-                        onSelect={() => {
-                          setCategories([...categories, { name: categoryInput, notes: categoryNotes }]);
-                          setSelectedCategory(categoryInput);
-                          setCategoryInput("");
-                          setCategoryNotes("");
-                          setCategorySelectOpen(false);
-                        }}
-                      >
-                        Add "{categoryInput}" as new category
-                      </CommandItem>
-                    )}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            <Button
-              className=""
-              variant="secondary"
-              onClick={handleAddRow}
-              disabled={!selectedCategory}
-            >
-              Add Item
-            </Button>
-            <Button onClick={() => window.print()}>Print Table</Button>
-            <Dialog open={editCategoriesOpen} onOpenChange={setEditCategoriesOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">Edit Categories</Button>
-              </DialogTrigger>
+          <div className="mt-6">
+            <Button variant="outline" onClick={() => setAddCategoryOpen(true)}>Add Category</Button>
+            <Dialog open={editCategoryOpen} onOpenChange={setEditCategoryOpen}>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Edit Category Notes</DialogTitle>
+                  <DialogTitle>Edit {editCategory}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  {categories.map((cat, index) => (
-                    <div key={cat.name} className="flex items-center space-x-2">
-                      <span className="w-32">{cat.name}</span>
-                      <Input
-                        value={cat.notes}
-                        onChange={(e) => {
-                          const newCategories = [...categories];
-                          newCategories[index] = { ...cat, notes: e.target.value };
-                          setCategories(newCategories);
-                        }}
-                        placeholder="Notes"
-                        className="normal-case"
-                      />
-                    </div>
-                  ))}
+                  <div>
+                    <label>Notes</label>
+                    <Input value={getCategoryByName(editCategory!)?.notes || ""} onChange={(e) => updateCategory(editCategory!, 'notes', e.target.value)} />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input type="checkbox" id={`enableMultiPage-${editCategory}`} checked={localEnableMultiPage} onChange={(e) => { const newValue = e.target.checked; setLocalEnableMultiPage(newValue); updateCategory(editCategory!, 'enableMultiPage', newValue); }} />
+                    <label htmlFor={`enableMultiPage-${editCategory}`}>Enable Multi-Page Labeling</label>
+                  </div>
+                  <Button variant="destructive" onClick={() => deleteCategory(editCategory!)}>Delete Category</Button>
                 </div>
               </DialogContent>
             </Dialog>
-            <Dialog open={editCoverOpen} onOpenChange={setEditCoverOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">Edit Cover Info</Button>
-              </DialogTrigger>
+            <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Edit Cover Information</DialogTitle>
+                  <DialogTitle>Add Category</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <Input
-                    value={coverInfo.showTitle}
-                    onChange={(e) => setCoverInfo({ ...coverInfo, showTitle: e.target.value })}
-                    placeholder="Show Title"
-                  />
-                  <Input
-                    value={coverInfo.lightingDesigner}
-                    onChange={(e) => setCoverInfo({ ...coverInfo, lightingDesigner: e.target.value })}
-                    placeholder="Lighting Designer"
-                  />
-                  <Input
-                    value={coverInfo.lightingDesignerContact}
-                    onChange={(e) => setCoverInfo({ ...coverInfo, lightingDesignerContact: e.target.value })}
-                    placeholder="Lighting Designer Contact"
-                  />
-                  <Input
-                    value={coverInfo.productionElectrician}
-                    onChange={(e) => setCoverInfo({ ...coverInfo, productionElectrician: e.target.value })}
-                    placeholder="Production Electrician"
-                  />
-                  <Input
-                    value={coverInfo.productionElectricianContact}
-                    onChange={(e) => setCoverInfo({ ...coverInfo, productionElectricianContact: e.target.value })}
-                    placeholder="Production Electrician Contact"
-                  />
-                  <Input
-                    value={coverInfo.venueName}
-                    onChange={(e) => setCoverInfo({ ...coverInfo, venueName: e.target.value })}
-                    placeholder="Venue Name"
-                  />
-                  <Input
-                    value={coverInfo.venueAddress}
-                    onChange={(e) => setCoverInfo({ ...coverInfo, venueAddress: e.target.value })}
-                    placeholder="Venue Address"
-                  />
+                  <Input placeholder="Category Name" value={categoryInput} onChange={(e) => setCategoryInput(e.target.value)} />
+                  <Input placeholder="Notes" value={categoryNotes} onChange={(e) => setCategoryNotes(e.target.value)} />
+                  <div className="flex items-center space-x-2">
+                    <input type="checkbox" id="enableMultiPageAdd" checked={enableMultiPageInput} onChange={(e) => setEnableMultiPageInput(e.target.checked)} />
+                    <label htmlFor="enableMultiPageAdd">Enable Multi-Page Labeling</label>
+                  </div>
+                  <Button onClick={handleAddCategory}>Add</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={editShowOpen} onOpenChange={setEditShowOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Show Information</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Input placeholder="Show Title" value={coverInfo.showTitle} onChange={(e) => setCoverInfo({ ...coverInfo, showTitle: e.target.value })} />
+                  <Input placeholder="Lighting Designer" value={coverInfo.lightingDesigner} onChange={(e) => setCoverInfo({ ...coverInfo, lightingDesigner: e.target.value })} />
+                  <Input placeholder="Lighting Designer Contact" value={coverInfo.lightingDesignerContact} onChange={(e) => setCoverInfo({ ...coverInfo, lightingDesignerContact: e.target.value })} />
+                  <Input placeholder="Production Electrician" value={coverInfo.productionElectrician} onChange={(e) => setCoverInfo({ ...coverInfo, productionElectrician: e.target.value })} />
+                  <Input placeholder="Production Electrician Contact" value={coverInfo.productionElectricianContact} onChange={(e) => setCoverInfo({ ...coverInfo, productionElectricianContact: e.target.value })} />
+                  <Input placeholder="Venue Name" value={coverInfo.venueName} onChange={(e) => setCoverInfo({ ...coverInfo, venueName: e.target.value })} />
+                  <Input placeholder="Venue Address" value={coverInfo.venueAddress} onChange={(e) => setCoverInfo({ ...coverInfo, venueAddress: e.target.value })} />
+                  <Button onClick={() => setEditShowOpen(false)}>Save</Button>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
         </div>
       </div>
+      <Button className="fixed bottom-4 right-4 rounded-full w-12 h-12 p-0" onClick={() => window.print()}>
+        <Printer />
+      </Button>
       <div className="print-only" style={{display: 'none'}}>
         <div className="cover-page" style={{pageBreakAfter: 'always', textAlign: 'center', padding: '0', color: 'black', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '10in'}}>
           <h1 style={{fontSize: '48px', marginBottom: '50px'}}>{coverInfo.showTitle || 'Show Title'}</h1>
@@ -640,11 +576,12 @@ export default function WerkOrder() {
           {Object.entries(groupedItems).sort(([a], [b]) => a.localeCompare(b)).map(([cat, catItems]) => {
             const category = getCategoryByName(cat);
             return (
-              <div key={cat} style={{pageBreakInside: 'avoid'}}>
-                <h2 style={{fontSize: '24px', textAlign: 'center', color: 'black'}}>{cat}</h2>
-                {category && category.notes && <h3 style={{fontSize: '18px', textAlign: 'center', color: 'black'}}>{category.notes}</h3>}
+              <div key={cat}>
                 <table style={{width: '100%', borderCollapse: 'collapse', color: 'black'}}>
                   <thead>
+                    <tr>
+                      <th colSpan={5} style={{textAlign: 'center', fontSize: '24px', border: 'none', padding: '10px'}}>{cat}{category?.enableMultiPage ? ' (cont.)' : ''}</th>
+                    </tr>
                     <tr>
                       <th style={{border: '1px solid black', padding: '8px', color: 'black'}}>Item Name</th>
                       <th style={{border: '1px solid black', padding: '8px', color: 'black'}}>Active</th>
@@ -664,6 +601,13 @@ export default function WerkOrder() {
                       </tr>
                     ))}
                   </tbody>
+                  {category?.enableMultiPage && (
+                    <tfoot>
+                      <tr>
+                        <td colSpan={5} style={{textAlign: 'center', fontWeight: 'bold', border: 'none', padding: '10px'}}>CONTINUED ON NEXT PAGE</td>
+                      </tr>
+                    </tfoot>
+                  )}
                 </table>
               </div>
             );
