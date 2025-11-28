@@ -33,6 +33,7 @@
     "shiki": "^3.12.2",
     "tailwind-merge": "^3.3.0",
     "three": "^0.177.0",
+    "usehooks-ts": "^3.1.1",
     "wavesurfer.js": "^7.11.0"
   },
   "devDependencies": {

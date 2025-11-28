@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Play, Pause, Upload, Settings, Plus, Trash2, Edit2, Download, Circle, Square, Triangle, Star, Heart, Zap, Sun, Moon, Cloud, Flame } from 'lucide-react';
+import { Play, Pause, Upload, Settings, Plus, Trash2, Edit2, Download, Circle, Square, Triangle, Star, Heart, Zap, Sun, Moon, Cloud, Flame, Smartphone } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 type FrameRate = 24 | 30;
@@ -952,17 +952,17 @@ $$Format 3.00
     }, [audioTracks, cuePointTypes, duration, currentTrackId, deleteCuePoint]);
 
     return (
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-2">
+        <div className="min-h-svh bg-black flex flex-col items-center justify-center p-2">
             {isMobile ? (
                 <div className="flex flex-col items-center justify-center text-center px-6">
-                    <div className="text-6xl mb-6">📱</div>
+                    <div className="text-6xl mb-6"><Smartphone /></div>
                     <h1 className="text-2xl font-light text-white mb-3">PointCue</h1>
                     <p className="text-sm text-white/60 max-w-xs">
-                        PointCue is not available on mobile devices. Please visit on a desktop or laptop computer.
+                        Mobile is currently unsupported. Please visit on a desktop or laptop computer.
                     </p>
                 </div>
             ) : (
-            <div className="w-full max-w-full h-[calc(100vh-1rem)] flex gap-4 overflow-hidden">
+            <div className="w-full max-w-full h-[calc(100vh-9rem)] flex gap-4 overflow-hidden">
                 {/* Left Sidebar - File List */}
                 <div 
                     className="w-80 flex-shrink-0 flex flex-col"

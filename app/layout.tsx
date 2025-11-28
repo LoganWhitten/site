@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
 import "./globals.css"
-import { ReactLenis } from "lenis/react";
 import { Metadata } from "next";
+import { TabBar } from "@/components/tabs";
+
 
 export const metadata: Metadata = {
   title: "Logan Whitten",
@@ -10,10 +11,14 @@ export const metadata: Metadata = {
 
 
 export default function RootLayout({children}: {children: ReactNode}){
+
   return (
     <html>
-      <body className="h-svh dark w-full">
-        <div className="cursor-default" >{children}</div>
+      <body className="h-svh overscroll-none dark w-full">
+        <div className="cursor-default">{children}</div>
+        <div className="fixed bottom-4 z-50 w-screen flex place-content-center">
+          <TabBar />
+        </div>
       </body>
     </html>
   );
