@@ -52,58 +52,54 @@ const CATEGORIES_KEY = 'werkorder-categories';
 const SELECTED_CATEGORY_KEY = 'werkorder-selected-category';
 const COVER_KEY = 'werkorder-cover';
 
+const defaultCoverInfo: CoverInfo = {
+    showTitle: '',
+    lightingDesigner: '',
+    lightingDesignerContact: '',
+    productionElectrician: '',
+    productionElectricianContact: '',
+    venueName: '',
+    venueAddress: ''
+};
+
 export default function WerkOrder() {
-    const [items, setItems] = useState<Item[]>(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem(ITEMS_KEY);
-            return saved ? JSON.parse(saved) : initialItems;
-        }
-        return initialItems;
-    });
-    const [categories, setCategories] = useState<Category[]>(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem(CATEGORIES_KEY);
-            return saved ? JSON.parse(saved) : initialCategories;
-        }
-        return initialCategories;
-    });
+    const [items, setItems] = useState<Item[]>(initialItems);
+    const [categories, setCategories] = useState<Category[]>(initialCategories);
     const [categoryInput, setCategoryInput] = useState("");
     const [categoryNotes, setCategoryNotes] = useState("");
-    const [selectedCategory] = useState<string>(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem(SELECTED_CATEGORY_KEY) || "";
-        }
-        return "";
-    });
+    const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [editCategory, setEditCategory] = useState<string | null>(null);
     const [editCategoryOpen, setEditCategoryOpen] = useState(false);
     const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+    const [addCategoryName, setAddCategoryName] = useState("");
+    const [addCategoryNotes, setAddCategoryNotes] = useState("");
+    const [addCategoryMultiPage, setAddCategoryMultiPage] = useState(false);
     const [editShowOpen, setEditShowOpen] = useState(false);
     const [enableMultiPageInput, setEnableMultiPageInput] = useState(false);
     const [localEnableMultiPage, setLocalEnableMultiPage] = useState(false);
-    const [coverInfo, setCoverInfo] = useState<CoverInfo>(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem(COVER_KEY);
-            return saved ? JSON.parse(saved) : {
-                showTitle: '',
-                lightingDesigner: '',
-                lightingDesignerContact: '',
-                productionElectrician: '',
-                productionElectricianContact: '',
-                venueName: '',
-                venueAddress: ''
-            };
+    const [localEditCategoryNotes, setLocalEditCategoryNotes] = useState("");
+    const [coverInfo, setCoverInfo] = useState<CoverInfo>(defaultCoverInfo);
+    const [isHydrated, setIsHydrated] = useState(false);
+
+    // Load from localStorage after hydration
+    useEffect(() => {
+        const savedItems = localStorage.getItem(ITEMS_KEY);
+        const savedCategories = localStorage.getItem(CATEGORIES_KEY);
+        const savedSelectedCategory = localStorage.getItem(SELECTED_CATEGORY_KEY);
+        const savedCover = localStorage.getItem(COVER_KEY);
+        
+        if (savedItems) setItems(JSON.parse(savedItems));
+        if (savedCategories) {
+            // Filter out any invalid categories (those without a valid name)
+            const parsed = JSON.parse(savedCategories) as Category[];
+            const validCategories = parsed.filter(c => c && typeof c.name === 'string' && c.name.trim() !== '');
+            setCategories(validCategories.length > 0 ? validCategories : initialCategories);
         }
-        return {
-            showTitle: '',
-            lightingDesigner: '',
-            lightingDesignerContact: '',
-            productionElectrician: '',
-            productionElectricianContact: '',
-            venueName: '',
-            venueAddress: ''
-        };
-    });
+        if (savedSelectedCategory) setSelectedCategory(savedSelectedCategory);
+        if (savedCover) setCoverInfo(JSON.parse(savedCover));
+        
+        setIsHydrated(true);
+    }, []);
     const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
@@ -183,42 +179,60 @@ export default function WerkOrder() {
     }, [handleAddRow]);
 
     useEffect(() => {
-        localStorage.setItem(ITEMS_KEY, JSON.stringify(items));
-    }, [items]);
+        if (isHydrated) {
+            localStorage.setItem(ITEMS_KEY, JSON.stringify(items));
+        }
+    }, [items, isHydrated]);
 
     useEffect(() => {
-        localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-    }, [categories]);
+        if (isHydrated) {
+            localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+        }
+    }, [categories, isHydrated]);
 
     useEffect(() => {
-        localStorage.setItem(SELECTED_CATEGORY_KEY, selectedCategory);
-    }, [selectedCategory]);
+        if (isHydrated) {
+            localStorage.setItem(SELECTED_CATEGORY_KEY, selectedCategory);
+        }
+    }, [selectedCategory, isHydrated]);
 
     useEffect(() => {
-        localStorage.setItem(COVER_KEY, JSON.stringify(coverInfo));
-    }, [coverInfo]);
+        if (isHydrated) {
+            localStorage.setItem(COVER_KEY, JSON.stringify(coverInfo));
+        }
+    }, [coverInfo, isHydrated]);
 
     const getCategoryByName = (name: string) => categories.find(c => c.name?.toLowerCase() === name?.toLowerCase());
 
     const updateCategory = (name: string, field: keyof Category, value: string | number | boolean) => {
-        const category = categories.find(c => c.name?.toLowerCase() === name?.toLowerCase());
-        if (category) {
-            setCategories(categories.map(c => c === category ? { ...c, [field]: value } : c));
-        }
+        setCategories(prev => prev.map(c => 
+            c.name?.toLowerCase() === name?.toLowerCase() 
+                ? { ...c, [field]: value } 
+                : c
+        ));
     };
 
     const deleteCategory = (name: string) => {
-        setCategories(categories.filter(c => c.name !== name));
-        setItems(items.map(item => item.category === name ? { ...item, category: '' } : item));
+        setCategories(prev => prev.filter(c => c.name !== name));
+        setItems(prev => prev.map(item => item.category === name ? { ...item, category: '' } : item));
         setEditCategoryOpen(false);
     };
 
     const handleAddCategory = () => {
-        if (categoryInput && !categories.some(c => c.name === categoryInput)) {
-            setCategories([...categories, { name: categoryInput, notes: categoryNotes, enableMultiPage: enableMultiPageInput }]);
-            setCategoryInput('');
-            setCategoryNotes('');
-            setEnableMultiPageInput(false);
+        const trimmedName = addCategoryName.trim();
+        if (trimmedName) {
+            // Check if category already exists
+            const exists = categories.some(c => c.name?.toLowerCase() === trimmedName.toLowerCase());
+            if (!exists) {
+                // Add the new category
+                setCategories(prev => [...prev, { name: trimmedName, notes: addCategoryNotes, enableMultiPage: addCategoryMultiPage }]);
+                // Add an empty item to this category so it shows up in the table
+                const newId = Date.now();
+                setItems(prev => [...prev, { id: newId, name: "", category: trimmedName, active: 0, spare: 0, notes: "" }]);
+            }
+            setAddCategoryName('');
+            setAddCategoryNotes('');
+            setAddCategoryMultiPage(false);
             setAddCategoryOpen(false);
         }
     };
@@ -334,10 +348,9 @@ export default function WerkOrder() {
                               className="w-full justify-center"
                               onClick={() => {
                                 setEditCategory(cat);
-                                setLocalEnableMultiPage(
-                                  getCategoryByName(cat)?.enableMultiPage ||
-                                    false
-                                );
+                                const catData = getCategoryByName(cat);
+                                setLocalEnableMultiPage(catData?.enableMultiPage || false);
+                                setLocalEditCategoryNotes(catData?.notes || "");
                                 setEditCategoryOpen(true);
                               }}
                             >
@@ -614,10 +627,11 @@ export default function WerkOrder() {
                     <div>
                       <label>Notes</label>
                       <Input
-                        value={getCategoryByName(editCategory!)?.notes || ""}
-                        onChange={(e) =>
-                          updateCategory(editCategory!, "notes", e.target.value)
-                        }
+                        value={localEditCategoryNotes}
+                        onChange={(e) => {
+                          setLocalEditCategoryNotes(e.target.value);
+                          updateCategory(editCategory!, "notes", e.target.value);
+                        }}
                       />
                     </div>
                     <div className="flex items-center space-x-2">
@@ -648,7 +662,14 @@ export default function WerkOrder() {
                   </div>
                 </DialogContent>
               </Dialog>
-              <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
+              <Dialog open={addCategoryOpen} onOpenChange={(open) => {
+                setAddCategoryOpen(open);
+                if (!open) {
+                  setAddCategoryName('');
+                  setAddCategoryNotes('');
+                  setAddCategoryMultiPage(false);
+                }
+              }}>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Add Category</DialogTitle>
@@ -656,21 +677,21 @@ export default function WerkOrder() {
                   <div className="space-y-4">
                     <Input
                       placeholder="Category Name"
-                      value={categoryInput}
-                      onChange={(e) => setCategoryInput(e.target.value)}
+                      value={addCategoryName}
+                      onChange={(e) => setAddCategoryName(e.target.value)}
                     />
                     <Input
                       placeholder="Notes"
-                      value={categoryNotes}
-                      onChange={(e) => setCategoryNotes(e.target.value)}
+                      value={addCategoryNotes}
+                      onChange={(e) => setAddCategoryNotes(e.target.value)}
                     />
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"
                         id="enableMultiPageAdd"
-                        checked={enableMultiPageInput}
+                        checked={addCategoryMultiPage}
                         onChange={(e) =>
-                          setEnableMultiPageInput(e.target.checked)
+                          setAddCategoryMultiPage(e.target.checked)
                         }
                       />
                       <label htmlFor="enableMultiPageAdd">
@@ -833,6 +854,23 @@ export default function WerkOrder() {
                             {category?.enableMultiPage ? " (cont.)" : ""}
                           </th>
                         </tr>
+                        {category?.notes && (
+                          <tr>
+                            <th
+                              colSpan={5}
+                              style={{
+                                textAlign: "center",
+                                fontSize: "14px",
+                                fontWeight: "normal",
+                                fontStyle: "italic",
+                                border: "none",
+                                padding: "4px 10px 10px 10px",
+                              }}
+                            >
+                              {category.notes}
+                            </th>
+                          </tr>
+                        )}
                         <tr>
                           <th
                             style={{
