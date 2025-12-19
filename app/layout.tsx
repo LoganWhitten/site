@@ -1,23 +1,34 @@
-import { ReactNode } from "react";
-import "./globals.css"
-import { Metadata } from "next";
-import { TabBar } from "@/components/tabs";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
 
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "Logan Whitten",
-  description: "Logan Whitten is a lighting technician & developer currently studying at UNCSA.",
+  title: "Logan Whitten's Site",
+  description: "Logan Whitten is a lighting technician & developer studying lighting technology at UNCSA",
 };
 
-
-export default function RootLayout({children}: {children: ReactNode}){
-
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html>
-      <body className="h-svh overscroll-none dark w-full">
-        <div className="cursor-default">{children}</div>
-        <div className="fixed bottom-4 z-50 w-screen flex place-content-center">
-          <TabBar />
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <div className="overscroll-none">
+        {children}
         </div>
       </body>
     </html>
