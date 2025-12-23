@@ -232,7 +232,7 @@
 			.title-mask
 				overflow: hidden
 				display: inline-flex
-				height: 220px
+				height: 165px
 
 			.mask
 				overflow: hidden
@@ -340,6 +340,9 @@
 @media only screen and (max-width: 750px)
 	.occupation
 		width: 70%
+
+	.title-mask
+		height: 150px !important
 
 
 #signature
