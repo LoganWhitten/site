@@ -243,7 +243,7 @@
 
 			.occupation
 				position: relative
-				margin-top: 8vh
+				margin-top: 4vh
 
 			.action-mask
 				margin-top: 10vh
