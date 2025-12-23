@@ -1,5 +1,17 @@
 [
     {
+        "id": "ttg",
+        "title": "Illuminated Integration Summer '25",
+        "details": {
+            "description": "I worked as an integration intern for ii in the summer of 2025, I was able to assist in q-sys plugin development and the opening of a new ride at Hersheypark.",
+            "summary": "Integration Intern"
+        },
+        "roles": [
+            "Integrations Intern",
+            "Plugin Developer"
+        ]
+    },
+    {
         "id": "photona24",
         "title": "Photona '24",
         "details": {
@@ -16,18 +28,6 @@
                 "text": "Visit Site",
                 "link": "https://marymount.fr"
             }
-        ]
-    },
-    {
-        "id": "falldance25",
-        "title": "Fall Dance '25",
-        "details": {
-            "description": "A single page web application for managing research and administrative content for LCML at the University of British Columbia",
-            "summary": "Web Application"
-        },
-        "roles": [
-            "UI/UX Designer",
-            "Full-Stack Web Developer"
         ]
     },
     {

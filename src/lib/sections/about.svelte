@@ -128,7 +128,7 @@
 			</li>
 			<li>
 				<div in:letterSlideIn={{ initDelay: 550 }}>
-					1x — ACT MA3 Programming Contest
+					2024 ACT MA3 Programming Contest
 				</div>
 			</li>
 		</ul>
