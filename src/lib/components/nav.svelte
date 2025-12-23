@@ -103,7 +103,7 @@
 							<a href="mailto:logan@loganwhitten.com" target="_blank" in:mobileTransitionSwitcher={{ delay: 350 }}>Contact</a>
 						</li>
 						<li use:introAnimation={{ delay: 1300 }}>
-							<a href="https://loganwhitten.com/LoganWhittenResume-3-24-25.pdf" target="_blank" in:mobileTransitionSwitcher={{ delay: 400 }}>Resume</a>
+							<a href="https://loganwhitten.com/LoganWhittenResume-12-23-25.pdf" target="_blank" in:mobileTransitionSwitcher={{ delay: 400 }}>Resume</a>
 						</li>
 					{/key}
 				</ul>
