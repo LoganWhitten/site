@@ -232,7 +232,7 @@
 			.title-mask
 				overflow: hidden
 				display: inline-flex
-				height: 145px
+				height: 220px
 
 			.mask
 				overflow: hidden

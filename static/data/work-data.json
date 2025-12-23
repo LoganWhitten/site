@@ -12,67 +12,39 @@
         ]
     },
     {
+        "id": "bandit24",
+        "title": "Bandit Lites Internship",
+        "details": {
+            "description": "I have worked in both Bandit's touring prep shop, and their integration division.  I have gained valuebale experience on how to prep, tour, and integrate state of the art lighting equipment",
+            "summary": "Apprentace"
+        },
+        "roles": [
+            "Summer Apprentace",
+            "Contract Integrator"
+        ]
+    },
+    {
         "id": "photona24",
         "title": "Photona '24",
         "details": {
-            "description": "An enterprise grade dyanamic full stack application with a content management system for the Marymount International School, Paris.",
-            "summary": "Programmer"
+            "description": "I worked as the GrandMA3 programmer for my team's Photona piece.  I was able to leverage palletization and recipes to quickly try out different ideas.",
+            "summary": "GrandMA3 Programmer"
         },
         "roles": [
-            "UI/UX Designer",
-            "Full-Stack Developer"
-        ],
-        "links": [
-            {
-                "type": "web",
-                "text": "Visit Site",
-                "link": "https://marymount.fr"
-            }
+            "GrandMA3 Programmer"
         ]
     },
     {
         "id": "fairview",
         "title": "Fairview",
         "details": {
-            "description": "My personal portfolio website with a full showcase of previous featured projects. Received the Awwwards Honorable Mention.",
-            "summary": "Personal Portfolio"
+            "description": "I worked as an assistant on Fairview at UNCSA in fall of 2024.  I was able to gain skills in Lightwright 6, and Vectorworks Spotlight.",
+            "summary": "Assistant Lighting Designer"
         },
         "date": "May 2021",
         "roles": [
             "UI/UX Designer",
             "Front-end Web Developer"
-        ],
-        "links": [
-            {
-                "type": "web",
-                "text": "Visit Site",
-                "link": "https://v1.musabhassan.com"
-            }
-        ]
-    },
-    {
-        "id": "photona23",
-        "title": "Photona '23",
-        "details": {
-            "description": "A multi-platform community platform consisting of mobile apps, a web app, and server-side solutions for Kelowna Islamic Center.",
-            "summary": "GrandMA3 Programmer"
-        },
-        "roles": [
-            "UI/UX Designer",
-            "Mobile Developer",
-            "Full-Stack Developer"
-        ],
-        "links": [
-            {
-                "type": "android",
-                "text": "View on Google Play",
-                "link": "https://play.google.com/store/apps/details?id=com.kelownamasjid.android.app"
-            },
-            {
-                "type": "ios",
-                "text": "View on App Store",
-                "link": "https://apps.apple.com/us/app/kelowna-islamic-center/id1479503537?ls=1"
-            }
         ]
     }
 ]
