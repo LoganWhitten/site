@@ -62,7 +62,7 @@
 					<span class="button"><a href="mailto:logan@loganwhitten.com" target="_blank" class="clickable sublink link">Email Me</a></span>
 				</div>
 				<div in:maskSlideIn={{ delay: 700, reverse: true }}>
-					<span class="button"><a href="https://loganwhitten.com/LoganWhittenResume-11-07-25.pdf" target="_blank" class="clickable sublink link">Resume</a></span>
+					<span class="button"><a href="/LoganWhittenResume-3-24-25.pdf" target="_blank" class="clickable sublink link">Resume</a></span>
 				</div>
 			</div>
 		</div>
