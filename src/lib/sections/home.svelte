@@ -238,6 +238,7 @@
 				overflow: hidden
 
 			.h-signature
+				display: none
 				width: 35vh
 				margin-left: -6vh
 

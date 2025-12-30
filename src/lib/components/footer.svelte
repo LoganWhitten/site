@@ -218,6 +218,7 @@
         justify-content: center
 
         .name-signature
+            display: none
             width: 20vh
 
 #signature
