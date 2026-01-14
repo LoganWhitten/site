@@ -54,7 +54,7 @@
 			</h1>
 			<div in:maskSlideIn={{ duration: 1200, reverse: true, delay: 150 }}>
 				<p class="paragraph">
-					I'm a jounior at the University of North Carolina School of the Arts. I love rock climbing and coding projects.<br><br>At school I've gotten the opportunity to further my skills in GrandMA3 programming, as well as theatrical and concert lighting rig design and electrification.
+					I'm a junior at the University of North Carolina School of the Arts. I love rock climbing and coding projects.<br><br>At school I've gotten the opportunity to further my skills in GrandMA3 programming, as well as theatrical and concert lighting rig design and electrification.
 				</p>
 			</div>
 			<div class="social-button-wrapper">
