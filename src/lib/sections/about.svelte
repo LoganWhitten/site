@@ -62,7 +62,7 @@
 					<span class="button"><a href="mailto:logan@loganwhitten.com" target="_blank" class="clickable sublink link">Email Me</a></span>
 				</div>
 				<div in:maskSlideIn={{ delay: 700, reverse: true }}>
-					<span class="button"><a href="/LoganWhittenResume-12-23-25.pdf" target="_blank" class="clickable sublink link">Resume</a></span>
+					<span class="button"><a href="/LoganWhittenResume-01-14-26.pdf" target="_blank" class="clickable sublink link">Resume</a></span>
 				</div>
 			</div>
 		</div>
@@ -114,7 +114,7 @@
 			</li>
 			<li>
 				<div in:letterSlideIn={{ initDelay: 850 }}>
-					Rigging
+					Networking
 				</div>
 				<div class="flex-item" in:maskSlideIn={{ delay: 900 }}>
 				</div>
@@ -146,7 +146,6 @@
 	display: flex
 	flex-direction: row
 	justify-content: space-between
-	overflow: hidden
 	padding: 0 5vw
 	margin-top: 40vh
 	position: relative
@@ -166,7 +165,6 @@
 
 	.content-wrapper
 		box-sizing: border-box
-		width: 50%
 		height: 100%
 		margin: 0 2vw
 		padding-right: 4vw
@@ -179,7 +177,7 @@
 
 		@media only screen and (max-width: 950px)
 			&
-				width: 80%
+				width: 100%
 
 				h1
 					font-size: 25vw !important
@@ -190,9 +188,8 @@
 
 		.paragraph
 			margin-top: 10vh
-			margin-left: 13vw
 			position: relative
-			width: 60%
+			width: 100%
 			line-height: 1.5rem
 
 			@media only screen and (max-width: 750px)
@@ -205,14 +202,13 @@
 				position: absolute
 				height: 1px
 				width: 10vw
-				right: 115%
+				right: 105%
 				top: 15%
 				background-color: white
 				
 
 		.social-button-wrapper
 			font-size: 3vh
-			margin-left: 13vw
 			margin-top: 4vh
 			display: inline-block
 
