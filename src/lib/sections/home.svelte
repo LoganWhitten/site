@@ -158,7 +158,7 @@
 				</h1>
 				<div class="occupation mask">
 					<p class = "paragraph" bind:this={shortDetailsElement}>
-						Lighting technician & developer studying at UNCSA.
+						Lighting integration technician studying at UNCSA.
 					</p>
 				</div>
 				<div class="wrapper action-mask">
