@@ -1,3 +1,0 @@
-Sitemap: https://loganwhitten.com/sitemap.xml
-User-Agent: *
-Allow: /
