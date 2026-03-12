@@ -1,37 +1,48 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/react';
+import "./globals.css";
+import type { Metadata } from "next";
+import { Inter, Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+import { EtheralShadow } from "@/components/ui/etheral-shadow";
 
-const inter = Inter({ subsets: ['latin'] });
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://next-mdx-blog.vercel.app'),
+  metadataBase: new URL("https://next-mdx-blog.vercel.app"),
   alternates: {
-    canonical: '/'
+    canonical: "/",
   },
-  title: {
-    default: 'John Smith',
-    template: '%s | John Smith'
-  },
-  description: 'My portfolio, blog, and personal website.'
+  title: "Logan Whitten",
+  description:
+    "Portfolio and personal website of Logan Whitten, a lighting integrator and programmer studying at UNCSA.",
 };
 
 export default function RootLayout({
-  children
+  children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.className}`}>
-      <body className="antialiased tracking-tight">
-        <div className="min-h-screen flex flex-col justify-between pt-0 md:pt-8 p-8 dark:bg-zinc-950 bg-white text-gray-900 dark:text-zinc-200">
+    <html
+      lang="en"
+      className={cn(inter.className, "font-sans", geist.variable)}
+    >
+      <body className="antialiased dark tracking-tight">
+        <div className="min-h-screen flex flex-col justify-between pt-0 md:pt-8 p-8 text-gray-900 dark:text-zinc-200">
           <main className="max-w-[60ch] mx-auto w-full space-y-6">
             {children}
           </main>
           <Footer />
-          <Analytics />
         </div>
+          <div className="fixed inset-0 -z-10">
+            <EtheralShadow
+              color="rgba(100, 128, 50, 1)"
+              animation={{ scale: 100, speed: 35 }}
+              noise={{ opacity: 1, scale: 1.2 }}
+              sizing="fill"
+            />
+          </div>
       </body>
     </html>
   );
@@ -39,10 +50,9 @@ export default function RootLayout({
 
 function Footer() {
   const links = [
-    { name: '@johnsmith', url: 'https://x.com/johnsmith' },
-    { name: 'youtube', url: 'https://www.youtube.com/@johnsmith' },
-    { name: 'linkedin', url: 'https://www.linkedin.com/in/johnsmith' },
-    { name: 'github', url: 'https://github.com/johnsmith' }
+    { name: "@loganwhitten512", url: "https://instagram.com/loganwhitten512" },
+    { name: "linkedin", url: "https://www.linkedin.com/in/loganwhitten" },
+    { name: "github", url: "https://github.com/loganwhitten" },
   ];
 
   return (
