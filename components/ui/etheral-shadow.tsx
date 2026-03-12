@@ -160,11 +160,11 @@ export function EtheralShadow({
                     style={{
                         backgroundColor: color,
                         maskImage: `url('https://framerusercontent.com/images/ceBGguIpUU8luwByxuQz79t7To.png')`,
-                        maskSize: sizing === "stretch" ? "100% 100%" : "cover",
+                        maskSize: sizing === "stretch" ? "125% 125%" : "cover",
                         maskRepeat: "no-repeat",
                         maskPosition: "center",
-                        width: "100%",
-                        height: "100%"
+                        width: "150%",
+                        height: "175%"
                     }}
                 />
             </div>

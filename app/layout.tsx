@@ -35,14 +35,14 @@ export default function RootLayout({
           </main>
           <Footer />
         </div>
-          <div className="fixed inset-0 -z-10">
-            <EtheralShadow
-              color="rgba(100, 128, 50, 1)"
-              animation={{ scale: 100, speed: 35 }}
-              noise={{ opacity: 1, scale: 1.2 }}
-              sizing="fill"
-            />
-          </div>
+        <div className="fixed inset-0 -z-10 opacity-25">
+          <EtheralShadow
+            color="rgba(128, 128, 128, 1)"
+            animation={{ scale: 100, speed: 65 }}
+            noise={{ opacity: 1, scale: 1.2 }}
+            sizing="fill"
+          />
+        </div>
       </body>
     </html>
   );
