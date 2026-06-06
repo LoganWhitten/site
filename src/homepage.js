@@ -56,7 +56,7 @@ colorInput.addEventListener("input", () => {
     pronoun.textContent = "My";
   }
 
-  if (text.length > 4) {
+  if (text.length > 6) {
     colorInput.textContent = text.substring(0, text.length - 1);
   } else {
     data = fetchJSONData(
