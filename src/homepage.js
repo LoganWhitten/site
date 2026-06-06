@@ -1,3 +1,5 @@
+const favoriteColor = "R32"
+document.getElementById('ColorInput').textContent = favoriteColor;
 function fetchJSONData(url, colorinput) {
   const cachedData = localStorage.getItem(url);
   if (cachedData) {
@@ -50,7 +52,7 @@ function convertCMYKtoRGB(c, m, y, k) {
 const colorInput = document.getElementById("ColorInput");
 colorInput.addEventListener("input", () => {
   const text = colorInput.textContent;
-  if (text.toUpperCase() != "L119") {
+  if (text.toUpperCase() != favoriteColor) {
     pronoun.textContent = "Your";
   } else {
     pronoun.textContent = "My";
