@@ -1,0 +1,99 @@
+@font-face {
+  font-family: tiktokSans;
+  src: url(/public/fonts/TikTokSans-VariableFont_opsz\,slnt\,wdth\,wght.ttf);
+}
+
+@font-face {
+  font-family: geist;
+  src: url(/public/fonts/Geist-VariableFont_wght.ttf);
+}
+
+body {
+  background: #111111;
+  color: white;
+  font-optical-sizing: auto;
+  display: grid;
+  @media (min-width: 450px) {
+    margin-left: 25%;
+    margin-right: 25%;
+  }
+  font-family: geist;
+}
+
+a {
+  cursor: pointer;
+  color: white;
+  text-decoration: none;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes fadeInDelay {
+  0% {
+    opacity: 0;
+  }
+  22% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes fadeInSuperDelay {
+  0% {
+    opacity: 0;
+  }
+  44% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+a {
+  animation-name: fadeInSuperDelay;
+  animation-duration: 3s;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+p1 {
+  animation-name: fadeInSuperDelay;
+  animation-duration: 3s;
+}
+
+img {
+  border-radius: 10px;
+  width: 80%;
+  animation-name: fadeInDelay;
+  animation-duration: 3s;
+}
+
+ColorText {
+  color: rgb(0, 120.000042, 200.00007);
+}
+
+h1 {
+  font-family: "tiktokSans";
+  animation-name: fadeIn;
+  animation-duration: 3s;
+}
+
+#ColorInput {
+  text-transform: uppercase;
+  background-color: transparent;
+  outline-color: transparent;
+  color: white;
+  width: 40px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
