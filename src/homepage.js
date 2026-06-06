@@ -65,3 +65,8 @@ colorInput.addEventListener("input", () => {
     );
   }
 });
+
+fetchJSONData(
+      "./public/gels.json",
+      colorInput.textContent.toUpperCase(),
+    );
