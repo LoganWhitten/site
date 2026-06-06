@@ -1,7 +1,8 @@
 name: Docker Image CI for GHCR
 
 on:
-    push
+    push:
+    workflow_dispatch:
 jobs:
     build_and_publish:
         runs-on: ubuntu-latest
