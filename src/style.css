@@ -78,6 +78,10 @@ img {
   animation-duration: 3s;
 }
 
+ColorText {
+  color: rgb(243, 90, 92);
+}
+
 h1 {
   font-family: "tiktokSans";
   animation-name: fadeIn;

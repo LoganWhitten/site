@@ -47,6 +47,7 @@ function convertCMYKtoRGB(c, m, y, k) {
   const g = 255 * (1 - m) * (1 - k);
   const b = 255 * (1 - y) * (1 - k);
   return `rgb(${r},${g},${b})`;
+  console.log(`rgb(${r},${g},${b})`);
 }
 
 const colorInput = document.getElementById("ColorInput");
