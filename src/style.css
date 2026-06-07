@@ -13,7 +13,7 @@ body {
   color: white;
   font-optical-sizing: auto;
   display: grid;
-  @media (min-width: 450px) {
+  @media (min-width: 1000px) {
     margin-left: 25%;
     margin-right: 25%;
   }
@@ -24,6 +24,8 @@ a {
   cursor: pointer;
   color: white;
   text-decoration: none;
+  animation-name: fadeInSuperDelay;
+  animation-duration: 3s;
 }
 
 @keyframes fadeIn {
@@ -57,11 +59,6 @@ a {
   }
 }
 
-a {
-  animation-name: fadeInSuperDelay;
-  animation-duration: 3s;
-}
-
 a:hover {
   text-decoration: underline;
 }
@@ -74,7 +71,7 @@ p1 {
 #socialIcon {
   filter: invert(83%) sepia(59%) saturate(2%) hue-rotate(69deg) brightness(108%)
     contrast(101%);
-  height: 24px;
+  height: 20px;
   cursor: pointer;
 }
 
@@ -83,7 +80,7 @@ p1 {
 }
 
 #header {
-  @media (min-width: 450px) {
+  @media (min-width: 1000px) {
     display: flex;
     justify-content: space-between;
   }
@@ -94,7 +91,7 @@ p1 {
   width: 100%;
   animation-name: fadeInDelay;
   animation-duration: 3s;
-  @media (min-width: 450px) {
+  @media (min-width: 1000px) {
     width: 80%;
   }
 }
