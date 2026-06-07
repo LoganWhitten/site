@@ -24,8 +24,6 @@ a {
   cursor: pointer;
   color: white;
   text-decoration: none;
-  animation-name: fadeInSuperDelay;
-  animation-duration: 3s;
 }
 
 @keyframes fadeIn {
@@ -104,6 +102,58 @@ h1 {
   font-family: "tiktokSans";
   animation-name: fadeIn;
   animation-duration: 3s;
+}
+
+h3 {
+  animation-name: fadeInSuperDelay;
+  animation-duration: 3s;
+  padding-bottom: 0px;
+  margin-bottom: 0px;
+}
+
+#project {
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+  border-radius: 5px;
+  padding-bottom: 3px;
+  padding-top: 3px;
+  padding-right: 5px;
+  text-decoration: none;
+}
+
+#project:hover {
+  padding-left: 3px;
+  background-color: rgba(128, 128, 128, 0.174);
+}
+
+#projectSubtext {
+  font-size: x-small;
+  max-width: 90%;
+}
+
+#projectInfoDiv {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+}
+
+#projectProgress {
+  display: flex;
+  align-items: center;
+}
+
+#projectIcon {
+  height: 25px;
+    filter: invert(83%) sepia(59%) saturate(2%) hue-rotate(69deg) brightness(108%)
+    contrast(101%);
+
+}
+
+p2 {
+  animation-name: fadeInSuperDelay;
+  animation-duration: 3s;
+  font-size: medium;
 }
 
 #ColorInput {
