@@ -4,17 +4,42 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width initial-scale=1.0" />
     <link rel="stylesheet" href="/style.css" />
-    <link rel="icon" href="public/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="public/favicon.ico" type="image/x-icon" />
     <title>Logan Whitten</title>
   </head>
   <body>
-    <h1>Hey! I'm <ColorText>Logan Whitten</ColorText></h1>
-    <img src="public/images/me.png" alt="Logan Whitten" />
+    <h1 id="header">
+      <span> Hey! I'm <ColorText>Logan Whitten</ColorText> </span>
+      <div>
+        <a href="https://github.com/loganwhitten/" style="animation-duration:2s" target="_blank">
+          <img id="socialIcon" src="/public/images/github.svg">
+        </a>
+        <a href="https://instagram.com/loganwhitten512" style="animation-duration: 2.25s;" target="_blank">
+          <img id="socialIcon" src="/public/images/instagram.svg" />
+        </a>
+        <a href="https://linkedin.com/in/loganwhitten"style="animation-duration: 2.5s;" target="_blank">
+          <img id="socialIcon" src="/public/images/linkedin.svg" />
+        </a>
+      </div>
+    </h1>
+    <img id="headerImg" src="public/images/me.png" alt="Logan Whitten" />
+
     <p1 style="margin-top: 16px">
       I'm a senior at <ColorText>UNCSA</ColorText>, I love
       <ColorText>Rock Climbing </ColorText>and
-      <ColorText>Coding Projects</ColorText>. <span id="pronoun">My</span> favorite Color is
+      <ColorText>Coding Projects</ColorText>.
+      <span id="pronoun">My</span> favorite Color is
       <span id="ColorInput" contenteditable="true">R32</span>
+    </p1>
+    <p1 style="margin-top: 16px">
+      Currently I'm interning at
+      <a href="https://murphylighting.com"
+        ><ColorText>Murphy Lighting Systems</ColorText>
+      </a>
+      where I've had the opportunity to work on projects for
+      <ColorText>Royal Carribean</ColorText>,
+      <ColorText>Universal Parks and Resorts</ColorText> and
+      <ColorText>Kennedy Space Center</ColorText>.
     </p1>
     <br />
     <p1>
@@ -24,21 +49,6 @@
       <ColorText>concert</ColorText> lighting rig
       <ColorText>design</ColorText> and <ColorText>electrification</ColorText>.
     </p1>
-    <br />
-    <a href="mailto:logan@loganwhitten.com">Click here to get in touch.</a>
-    <!--
-    <div style="display: flex">
-      <h2 style="width: 90%">Some Recent Projects</h2>
-      <span style="font-size: xx-small; width: 10%">(no ai used :)</span>
-    </div>
-    <a href="https://github.com/loganwhitten">This Site</a>
-    <a href="https://github.com/loganwhitten">SVGenius</a>
--->
-    <br />
-    <p1 style="position:fixed; bottom:3px; color: gray; background: #11111149;"
-      >© Built by Logan Whitten in 2026 without AI.
-      <!--<a href="/site" style="color:gray">Learn more</a>--></p1
-    >
     <script src="homepage.js"></script>
   </body>
 </html>

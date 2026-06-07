@@ -71,11 +71,32 @@ p1 {
   animation-duration: 3s;
 }
 
-img {
+#socialIcon {
+  filter: invert(83%) sepia(59%) saturate(2%) hue-rotate(69deg) brightness(108%)
+    contrast(101%);
+  height: 24px;
+  cursor: pointer;
+}
+
+#socialIcon:hover {
+  scale: 110%;
+}
+
+#header {
+  @media (min-width: 450px) {
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+#headerImg {
   border-radius: 10px;
-  width: 80%;
+  width: 100%;
   animation-name: fadeInDelay;
   animation-duration: 3s;
+  @media (min-width: 450px) {
+    width: 80%;
+  }
 }
 
 ColorText {
