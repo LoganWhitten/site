@@ -1,0 +1,179 @@
+@import "tailwindcss";
+
+body {
+  background: #111111;
+  color: white;
+  font-optical-sizing: auto;
+  display: grid;
+  @media (min-width: 1000px) {
+    margin-left: 25%;
+    margin-right: 25%;
+  }
+  font-family: geist;
+}
+
+a {
+  cursor: pointer;
+  color: white;
+  text-decoration: none;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes fadeInDelay {
+  0% {
+    opacity: 0;
+  }
+  22% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes fadeInSuperDelay {
+  0% {
+    opacity: 0;
+  }
+  44% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes Ping {
+  0% {
+  }
+  100% {
+    scale: 125%;
+    opacity: 0;
+  }
+}
+
+#pulser {
+  border-radius: 100%;
+  height: 15px;
+  width: 15px;
+  background-color: rgb(0, 182, 0);
+  animation-name: Ping;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+p1 {
+  animation-name: fadeInSuperDelay;
+  animation-duration: 3s;
+}
+
+#socialIcon {
+  filter: invert(83%) sepia(59%) saturate(2%) hue-rotate(69deg) brightness(108%)
+    contrast(101%);
+  height: 20px;
+  cursor: pointer;
+}
+
+#socialIcon:hover {
+  scale: 110%;
+}
+
+#header {
+  @media (min-width: 1000px) {
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+#headerImg {
+  border-radius: 10px;
+  width: 100%;
+  animation-name: fadeInDelay;
+  animation-duration: 3s;
+  @media (min-width: 1000px) {
+    width: 80%;
+  }
+}
+
+ColorText {
+  color: rgb(243, 90, 92);
+}
+
+h1 {
+  font-family: tiktokSans;
+  font-weight: bolder;
+  animation-name: fadeIn;
+  animation-duration: 3s;
+    font-size: xx-large;
+}
+
+h3 {
+  animation-name: fadeInSuperDelay;
+  animation-duration: 3s;
+  padding-bottom: 0px;
+  margin-bottom: 0px;
+}
+
+#project {
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+  border-radius: 5px;
+  padding-bottom: 3px;
+  padding-top: 3px;
+  padding-right: 5px;
+  text-decoration: none;
+}
+
+#project:hover {
+  padding-left: 3px;
+  background-color: rgba(128, 128, 128, 0.174);
+}
+
+#projectSubtext {
+  font-size: x-small;
+  max-width: 90%;
+}
+
+#projectInfoDiv {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+}
+
+#projectProgress {
+  display: flex;
+  align-items: center;
+}
+
+#projectIcon {
+  height: 25px;
+  filter: invert(83%) sepia(59%) saturate(2%) hue-rotate(69deg) brightness(108%)
+    contrast(101%);
+}
+
+p2 {
+  animation-name: fadeInSuperDelay;
+  animation-duration: 3s;
+  font-size: medium;
+}
+
+#ColorInput {
+  text-transform: uppercase;
+  background-color: transparent;
+  outline-color: transparent;
+  color: white;
+  width: 40px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
