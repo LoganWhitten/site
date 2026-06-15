@@ -21,7 +21,7 @@ export default function RootLayout({
      <html
       lang="en"
     >
-      <body className='px-2'>{children}</body>
-    </html>   
+      <body className='px-2 flex bg-[#1b1b1b]'>{children}</body>
+    </html>
   );
 }

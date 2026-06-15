@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 body {
-  background: #111111;
   color: white;
   font-optical-sizing: auto;
   display: grid;
