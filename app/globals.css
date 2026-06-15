@@ -110,7 +110,6 @@ ColorText {
 }
 
 h1 {
-  font-family: tiktokSans;
   font-weight: bolder;
   animation-name: fadeIn;
   animation-duration: 3s;

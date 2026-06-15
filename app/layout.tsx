@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import localFont from 'next/font/local';
+import {Geist} from 'next/font/google'
 
-const geist = localFont({
-  src: '../public/fonts/Geist-VariableFont_wght.ttf',
-})
-
-const tiktokSans = localFont({
-  src: '../public/fonts/TikTokSans.ttf',
+const geist = Geist({
+  subsets: ['latin']
 })
 
 
