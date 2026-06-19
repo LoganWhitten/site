@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { db } from "./db/dexie";
+import { db } from "../db/dexie";
 
 import { Play } from "lucide-react";
 

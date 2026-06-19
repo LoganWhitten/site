@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { clearDB, db, Punch } from "./components/db/dexie";
+import { clearDB, db, Punch } from "./db/dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
