@@ -25,7 +25,8 @@ export default function LogButton({
 }) {
   return (
     <Button
-      className={`aspect-square ${variant != "destructive" ? "border-white bg-gray-950" : "bg-gray-950"}  h-16 rounded-md`}
+    variant={variant}
+      className={`h-16 w-full rounded-md`}
       onClick={() => {
         console.log({
           jobNumber: jobNumber,

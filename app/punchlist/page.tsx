@@ -1,82 +1,44 @@
 "use client";
 
 import { useState } from "react";
-import { clearDB, db, Punch } from "./db/dexie";
+import { clearDB, db } from "./db/dexie";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Input } from "@/components/ui/input";
+import MenuBar from "./components/MenuBar";
+import DayCard from "./components/DayCard";
 import { Button } from "@/components/ui/button";
-import LogButton from "./components/LogButton";
-import { Play, Square } from "lucide-react";
 
 export default function Page() {
   const PunchList = useLiveQuery(() => db.punches.toArray());
   let [jobNumberInput, setJobNumberInput] = useState("");
   return (
-    <div className="h-svh">
-      <nav>
-        <a className="text-2xl text-orange-700" href="/">
-          Logan Whitten
+    <div className="dark w-screen flex flex-col gap-4 px-2">
+      <div>
+        <a href="/">
+          <h1 className=" text-[rgb(243,90,92)]">Logan Whitten</h1>
         </a>
-      </nav>
-      <div>PunchList</div>
-      <ul className="grid auto-cols grid-cols-2">
-        {PunchList?.map((f: Punch) => {
-          const date = new Date(f.time);
-          return (
-            <li
-              className="bg-black m-2 p-1 border sm:border-[.25px] rounded-md grid border-white"
-              key={f.id}
-            >
-              <span className="text-orange-200">
-                {f.jobNumber != "" ? `Job Number: ${f.jobNumber} ` : ""}
-              </span>
-              <span>
-                {" "}
-                Start Time: {date.toLocaleDateString()} at{" "}
-                {date.toLocaleTimeString()}
-              </span>
-              Punch Type: {f.punchType}
-            </li>
-          );
-        })}
-      </ul>
-      <div className="">
-        <div className="bottom-2 absolute w-screen flex-col place-content-center">
-          <div className="w-screen flex place-content-center gap-4">
-            <LogButton jobNumber={jobNumberInput} punchType={"Work Start"}>
-              Work <Play />
-            </LogButton>
-            <LogButton
-              jobNumber={jobNumberInput}
-              variant="destructive"
-              punchType={"Work End"}
-            >
-              Work <Square />
-            </LogButton>
-            <LogButton jobNumber={jobNumberInput} punchType={"Travel Start"}>
-              Travel <Play />
-            </LogButton>
-            <LogButton
-              jobNumber={jobNumberInput}
-              variant="destructive"
-              punchType={"Travel End"}
-            >
-              Travel <Square />
-            </LogButton>
-          </div>
-          <div className="flex pt-3 place-content-center">
-            <Input
-              className="h-8 w-1/3 "
-              value={jobNumberInput}
-              onChange={(e) => setJobNumberInput(e.target.value)}
-              placeholder="job #"
-            />
-            <Button onClick={() => clearDB()} className="h-8">
-              Clear DB
-            </Button>
-          </div>
-        </div>
-      </div>
+        <div className="">PunchList</div>
+        <MenuBar
+          jobNumberInput={jobNumberInput}
+          setJobNumberInput={setJobNumberInput}
+        />
+      </div>{" "}
+      <span className="w-full flex place-content-center">
+        You've tracked 41.25 Hrs this week.
+      </span>
+      <DayCard day="Monday" />
+      <DayCard day="Tuesday" />
+      <DayCard day="Wednesday" />
+      <DayCard day="Thursday" />
+      <DayCard day="Friday" />
+      <DayCard day="Saturday" />
+      <DayCard day="Sunday" />
+      <Button
+        variant={"destructive"}
+        onClick={() => clearDB()}
+        className="h-16"
+      >
+        Clear Week
+      </Button>
     </div>
   );
 }
