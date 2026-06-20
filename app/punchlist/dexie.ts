@@ -5,7 +5,8 @@ import { Dexie, type EntityTable } from 'dexie';
 export interface Punch {
   id: number;
   jobNumber?: string;
-  time: number;
+  startTime: number;
+  endTime?: number;
   punchType: string;
 }
 
@@ -13,8 +14,8 @@ export interface Punch {
 export const db = new Dexie('PunchDatabase') as Dexie & {
   punches: EntityTable<Punch, 'id'>;
 };
-db.version(1).stores({
-  punches: '++id',
+db.version(2).stores({
+  punches: '++id, startTime',
 });
 
 export function clearDB() {
