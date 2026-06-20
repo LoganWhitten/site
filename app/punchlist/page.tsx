@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { clearDB, db } from "./dexie";
+import { clearDB, db, Punch } from "./dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import DayCard from "./components/DayCard";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,19 @@ import ModifyTime from "./components/ModifyTime";
 export default function Page() {
   const [inJob, setInJob] = useState(false);
   const [jobTime, setJobTime] = useState<Date>();
+  const [currentPunch, setCurrentPunch] = useState<Punch>();
   const todaysDate = new Date();
 
   const PunchList = useLiveQuery(() => db.punches.toArray());
+  // Calculate Punchtime
+  useEffect(() => {
+    if (currentPunch?.startTime) {
+      const time = new Date(currentPunch.startTime);
+      setJobTime(time);
+    }
+  }, [currentPunch]);
+
+  // On init
   useEffect(() => {
     db.punches
       .orderBy("id")
@@ -22,8 +32,7 @@ export default function Page() {
         if (p?.endTime == null && p?.startTime != null) {
           //we're in a job
           setInJob(true);
-          const time = new Date(p.startTime);
-          setJobTime(time);
+          setCurrentPunch(p);
         } else {
           //we're not in a job
           setInJob(false);
@@ -39,35 +48,38 @@ export default function Page() {
         <div className="">PunchList</div>
         {inJob && (
           <div>
-            <ModifyTime />
+            {currentPunch != null && (
+              <ModifyTime setInJob={setInJob} currentPunch={currentPunch} />
+            )}
             <span className="w-full flex place-content-center">
               You've been on the clock since
               {jobTime?.toLocaleDateString() == todaysDate.toLocaleDateString()
                 ? " "
                 : `${jobTime?.toLocaleDateString()} `}
               {jobTime?.toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit'
-              })}.
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              .
             </span>
           </div>
         )}
         {!inJob && (
           <div>
-            <LogTime />
+            <LogTime setCurrentPunch={setCurrentPunch} setInJob={setInJob} />
             <span className="w-full flex place-content-center">
               You've tracked 41.25 Hrs so far this week.
             </span>
           </div>
         )}
       </div>{" "}
-      <DayCard day="Monday" />
-      <DayCard day="Tuesday" />
-      <DayCard day="Wednesday" />
-      <DayCard day="Thursday" />
-      <DayCard day="Friday" />
-      <DayCard day="Saturday" />
-      <DayCard day="Sunday" />
+      <DayCard day={0} />
+      <DayCard day={1} />
+      <DayCard day={2} />
+      <DayCard day={3} />
+      <DayCard day={4} />
+      <DayCard day={5} />
+      <DayCard day={6} />
       <Button
         variant={"destructive"}
         onClick={() => clearDB()}

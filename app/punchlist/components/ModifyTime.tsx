@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Settings } from "lucide-react";
-import { db } from "../dexie";
+import { Settings } from "lucide-react";
+import { db, Punch } from "../dexie";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,25 +17,13 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
-export default function ModifyTime() {
+export default function ModifyTime({currentPunch, setInJob}: {currentPunch: Punch, setInJob: Function}) {
   return (
     <div className="flex gap-2 flex-col place-content-center">
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button
             className={`h-16 w-full rounded-md`}
-            onClick={() => {
-              console.log({
-                jobNumber: 11,
-                punchType: "12",
-                time: Date.now(),
-              });
-              db.punches.add({
-                jobNumber: "jobNumber",
-                punchType: "12",
-                startTime: Date.now(),
-              });
-            }}
           >
             Modify Time <Settings />
           </Button>
@@ -44,7 +32,6 @@ export default function ModifyTime() {
           <AlertDialogHeader>
             <AlertDialogTitle>Modify Time</AlertDialogTitle>
             <div className="w-full flex flex-col gap-2">
-
               <div className="flex flex-col place-items-start">
                 End Time
                 <Input
@@ -52,7 +39,7 @@ export default function ModifyTime() {
                   placeholder="--:-- --"
                   className="max-w-64"
                   type="time"
-                  />
+                />
               </div>
               <div className="flex flex-col place-items-start">
                 New Job #
@@ -60,7 +47,7 @@ export default function ModifyTime() {
               </div>
               <div className="flex flex-col place-items-start">
                 New Type
-                <RadioGroup  className="w-fit">
+                <RadioGroup className="w-fit">
                   <div className="flex items-center gap-3">
                     <RadioGroupItem value="default" id="r1" />
                     <Label htmlFor="r1">On-Site</Label>
@@ -75,12 +62,22 @@ export default function ModifyTime() {
                   </div>
                 </RadioGroup>
               </div>
-                  </div>
+            </div>
           </AlertDialogHeader>
           <AlertDialogDescription />
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled>Log</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                console.log({currentPunch})
+                db.punches.update(currentPunch.id, {
+                  endTime: Date.now(),
+                });
+                setInJob(false)
+              }}
+            >
+              Log
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

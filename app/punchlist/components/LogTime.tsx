@@ -17,27 +17,18 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
-export default function LogTime() {
+export default function LogTime({
+  setCurrentPunch,
+  setInJob,
+}: {
+  setCurrentPunch: Function;
+  setInJob: Function;
+}) {
   return (
     <div className="flex gap-2 flex-col place-content-center">
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button
-            variant={"outline"}
-            className={`h-16 w-full rounded-md`}
-            onClick={() => {
-              console.log({
-                jobNumber: 11,
-                punchType: "12",
-                time: Date.now(),
-              });
-              db.punches.add({
-                jobNumber: "jobNumber",
-                punchType: "12",
-                startTime: Date.now(),
-              });
-            }}
-          >
+          <Button variant={"outline"} className={`h-16 w-full rounded-md`}>
             Log Time <ChevronRight />
           </Button>
         </AlertDialogTrigger>
@@ -45,7 +36,6 @@ export default function LogTime() {
           <AlertDialogHeader>
             <AlertDialogTitle>Log Time</AlertDialogTitle>
             <div className="w-full flex flex-col gap-2">
-
               <div className="flex flex-col place-items-start">
                 Start Time
                 <Input
@@ -53,7 +43,7 @@ export default function LogTime() {
                   placeholder="--:-- --"
                   className="max-w-64"
                   type="time"
-                  />
+                />
               </div>
               <div className="flex flex-col place-items-start">
                 Job #
@@ -76,12 +66,35 @@ export default function LogTime() {
                   </div>
                 </RadioGroup>
               </div>
-                  </div>
+            </div>
           </AlertDialogHeader>
           <AlertDialogDescription />
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled>Log</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                console.log({
+                  jobNumber: 11,
+                  punchType: "12",
+                  time: Date.now(),
+                });
+                db.punches
+                  .add({
+                    jobNumber: "jobNumber",
+                    punchType: "12",
+                    startTime: Date.now(),
+                  })
+                  .then((id) => {
+                    db.punches.get(id).then((punch) => {
+                      console.log("punch is: ", punch);
+                      setCurrentPunch(punch);
+                      setInJob(true);
+                    });
+                  });
+              }}
+            >
+              Log
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

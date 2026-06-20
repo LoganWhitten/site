@@ -14,8 +14,8 @@ export interface Punch {
 export const db = new Dexie('PunchDatabase') as Dexie & {
   punches: EntityTable<Punch, 'id'>;
 };
-db.version(1).stores({
-  punches: '++id',
+db.version(2).stores({
+  punches: '++id, startTime',
 });
 
 export function clearDB() {
