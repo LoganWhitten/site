@@ -5,7 +5,8 @@ import { Dexie, type EntityTable } from 'dexie';
 export interface Punch {
   id: number;
   jobNumber?: string;
-  time: number;
+  startTime: number;
+  endTime?: number;
   punchType: string;
 }
 
