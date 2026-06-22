@@ -10,6 +10,7 @@ export default function Home() {
   const [color, setColor] = useState("rgb(243,90,92)");
   const [pronoun, setPronoun] = useState(" My");
   return (
+    <div className="px-3">
     <ColorContext value={color}>
       <h1 id="header">
         <span>
@@ -117,5 +118,7 @@ export default function Home() {
         </div>
       </div>
     </ColorContext>
+        </div>
   );
+  
 }
