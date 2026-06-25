@@ -83,9 +83,9 @@ export default function Home() {
           </a>
           , and
           <a target="_blank" href="https://www.delawarenorth.com/">
-            <ColorText>Kennedy Space Center</ColorText>
+            <ColorText>Kennedy Space Center </ColorText>
           </a>
-          .
+          and more.
         </p>
         <br />
         <p>
