@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useState } from "react";
 
 export default function LogTime({
   setCurrentPunch,
@@ -24,6 +25,8 @@ export default function LogTime({
   setCurrentPunch: Function;
   setInJob: Function;
 }) {
+  const date = new Date
+  const [startTime, setStartTime] = useState(`${date.getHours()}:${(Math.round(date.getMinutes() / 15) * 15)}`)
   return (
     <div className="flex gap-2 flex-col place-content-center">
       <AlertDialog>
@@ -43,6 +46,8 @@ export default function LogTime({
                   placeholder="--:-- --"
                   className="max-w-64"
                   type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
                 />
               </div>
               <div className="flex flex-col place-items-start">
@@ -73,20 +78,18 @@ export default function LogTime({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                console.log({
-                  jobNumber: 11,
-                  punchType: "12",
-                  time: Date.now(),
-                });
+                //i need to parse the time
+                const time = new Date
+                time.setHours(Number(startTime.slice(0,2)))
+                time.setMinutes(Number(startTime.slice(3,4)))
                 db.punches
                   .add({
                     jobNumber: "jobNumber",
                     punchType: "12",
-                    startTime: Date.now(),
+                    startTime: time.getTime(),
                   })
                   .then((id) => {
                     db.punches.get(id).then((punch) => {
-                      console.log("punch is: ", punch);
                       setCurrentPunch(punch);
                       setInJob(true);
                     });
