@@ -83,7 +83,7 @@ export default function ModifyTime({
                 time.setMinutes(Number(endTime.slice(3,4)))
                 db.punches
                   .update(currentPunch.id, {
-                    endTime: endTime,
+                    endTime: time.getTime(),
                   })
 
                 console.log({ currentPunch });
