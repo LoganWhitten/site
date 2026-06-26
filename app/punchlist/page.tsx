@@ -12,6 +12,8 @@ export default function Page() {
   const [inJob, setInJob] = useState(false);
   const [jobTime, setJobTime] = useState<Date>();
   const [currentPunch, setCurrentPunch] = useState<Punch>();
+  const [totalTime, setTotalTime] = useState(0);
+
   const todaysDate = new Date();
 
   const PunchList = useLiveQuery(() => db.punches.toArray());
@@ -40,7 +42,7 @@ export default function Page() {
       });
   }, []);
   return (
-    <div className="dark w-screen flex flex-col gap-4 px-2">
+    <div className="dark w-screen flex flex-col px-2">
       <div>
         <a href="/">
           <h1 className=" text-[rgb(243,90,92)]">Logan Whitten</h1>
@@ -51,7 +53,7 @@ export default function Page() {
             {currentPunch != null && (
               <ModifyTime setInJob={setInJob} currentPunch={currentPunch} />
             )}
-            <span className="w-full flex place-content-center">
+            <span className="w-full flex place-content-center mb-1 mt-4">
               You've been on the clock since
               {jobTime?.toLocaleDateString() == todaysDate.toLocaleDateString()
                 ? " "
@@ -67,19 +69,23 @@ export default function Page() {
         {!inJob && (
           <div>
             <LogTime setCurrentPunch={setCurrentPunch} setInJob={setInJob} />
-            <span className="w-full flex place-content-center">
-              You've tracked 41.25 Hrs so far this week.
+            <span className="w-full flex place-content-center mb-1 mt-4">
+              You've tracked{" "}
+              {Number(totalTime.toFixed(2)) < 0.01
+                ? "0 hours"
+                : `${totalTime.toFixed(2)} hours`}{" "}
+              so far this week.
             </span>
           </div>
         )}
       </div>{" "}
-      <DayCard day={0} />
-      <DayCard day={1} />
-      <DayCard day={2} />
-      <DayCard day={3} />
-      <DayCard day={4} />
-      <DayCard day={5} />
-      <DayCard day={6} />
+      <DayCard day={0} setTotalTime={setTotalTime} />
+      <DayCard day={1} setTotalTime={setTotalTime} />
+      <DayCard day={2} setTotalTime={setTotalTime} />
+      <DayCard day={3} setTotalTime={setTotalTime} />
+      <DayCard day={4} setTotalTime={setTotalTime} />
+      <DayCard day={5} setTotalTime={setTotalTime} />
+      <DayCard day={6} setTotalTime={setTotalTime} />
       <Button
         variant={"destructive"}
         onClick={() => clearDB()}

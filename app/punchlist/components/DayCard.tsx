@@ -8,10 +8,10 @@ import {
   Hamburger,
 } from "lucide-react";
 import { db } from "../dexie";
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
-export default function DayCard({ day }: { day: number }) {
-  const [totalTime, setTotalTime] = useState(0)
+export default function DayCard({ day, setTotalTime }: { day: number, setTotalTime: Dispatch<SetStateAction<number>> }) {
+  const [dailyTime, setDailyTime] = useState(0)
   const days = [
     "Monday",
     "Tuesday",
@@ -48,7 +48,8 @@ export default function DayCard({ day }: { day: number }) {
           timeWorked = (element.endTime) - element.startTime
           }
           const hours = ((timeWorked / 1000) / 60) / 60
-          console.log({hours, timeWorked})
+          console.log({hours})
+          setDailyTime((prev) => (prev + hours))
           setTotalTime((prev) => (prev + hours))
         }
       });
@@ -75,7 +76,7 @@ export default function DayCard({ day }: { day: number }) {
           </div>
         </div>
         <CardAction className="flex place-items-center place-content-center h-full">
-          {totalTime.toFixed(2)} Hrs <ChevronRight />
+          {dailyTime.toFixed(2)} Hrs <ChevronRight />
         </CardAction>
       </CardHeader>
     </Card>

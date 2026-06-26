@@ -16,15 +16,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useState } from "react";
 
-export default function ModifyTime({currentPunch, setInJob}: {currentPunch: Punch, setInJob: Function}) {
+export default function ModifyTime({
+  currentPunch,
+  setInJob,
+}: {
+  currentPunch: Punch;
+  setInJob: Function;
+}) {
+    const date = new Date
+    const [endTime, setEndTime] = useState(`${date.getHours()}:${(Math.round(date.getMinutes() / 15) * 15)}`)
   return (
     <div className="flex gap-2 flex-col place-content-center">
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button
-            className={`h-16 w-full rounded-md`}
-          >
+          <Button className={`h-16 w-full rounded-md`}>
             Modify Time <Settings />
           </Button>
         </AlertDialogTrigger>
@@ -39,6 +46,8 @@ export default function ModifyTime({currentPunch, setInJob}: {currentPunch: Punc
                   placeholder="--:-- --"
                   className="max-w-64"
                   type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
                 />
               </div>
               <div className="flex flex-col place-items-start">
@@ -69,11 +78,19 @@ export default function ModifyTime({currentPunch, setInJob}: {currentPunch: Punc
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                console.log({currentPunch})
+                                const time = new Date
+                time.setHours(Number(endTime.slice(0,2)))
+                time.setMinutes(Number(endTime.slice(3,4)))
+                db.punches
+                  .update(currentPunch.id, {
+                    endTime: endTime,
+                  })
+
+                console.log({ currentPunch });
                 db.punches.update(currentPunch.id, {
                   endTime: Date.now(),
                 });
-                setInJob(false)
+                setInJob(false);
               }}
             >
               Log
