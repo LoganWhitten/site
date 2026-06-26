@@ -42,10 +42,10 @@ export default function Page() {
       });
   }, []);
   return (
-    <div className="dark w-screen flex flex-col px-2">
+    <div className="dark w-screen left-0 absolute flex flex-col px-2">
       <div>
         <a href="/">
-          <h1 className=" text-[rgb(243,90,92)]">Logan Whitten</h1>
+          <h1 className="text-[rgb(243,90,92)]">Logan Whitten</h1>
         </a>
         <div className="">PunchList</div>
         {inJob && (
