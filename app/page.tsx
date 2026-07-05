@@ -108,7 +108,7 @@ export default function Home() {
               <p className=" text-lg">This Site</p>
               <p className="text-xs">
                 Next.JS containerized and running on a Raspberry PI. Built
-                without ai :)
+                entirely by me.
               </p>
             </div>
             <p id="projectProgress">
