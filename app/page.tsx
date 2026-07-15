@@ -81,7 +81,7 @@ export default function Home() {
             <a target="_blank" href="https://www.udx.com/en/us">
               <ColorText>Universal Destinations & Experiences</ColorText>
             </a>
-            , and
+            ,
             <a target="_blank" href="https://www.delawarenorth.com/">
               <ColorText>Kennedy Space Center </ColorText>
             </a>
