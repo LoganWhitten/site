@@ -8,10 +8,6 @@ body {
   color: white;
   font-optical-sizing: auto;
   display: grid;
-  @media (min-width: 1000px) {
-    margin-left: 25%;
-    margin-right: 25%;
-  }
   font-family: geist;
 }
 
