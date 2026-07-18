@@ -1,7 +1,4 @@
-import { Badge } from "@/components/ui/badge";
 import HeroItem from "./HeroItem";
-import { Briefcase, GraduationCap } from "lucide-react";
-import HeroHeader from "./HeroHeader";
 
 export default function NewHome() {
   return (
