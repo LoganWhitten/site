@@ -35,14 +35,14 @@ export default function HeroItem({
     >
       <div className="flex w-full place-content-between place-items-center">
         <img
-          className={`aspect-video w-1/3 h-full lg:w-auto lg:h-36 py-2 rounded-xl object-cover`}
+          className={`aspect-video w-1/3 h-full hidden md:block lg:w-auto lg:h-36 py-2 rounded-xl object-cover`}
           src={img}
         />
-        <div className="flex flex-col h-36 gap-2 flex-1 place-content-center text-center place-items-center">
-          <span className="lg:text-6xl text-2xl font-bold">{name}</span>
-          <span className="lg:text-xl">{subtitle}</span>
+        <div className="flex flex-col h-36 md:gap-2 flex-1 place-content-center md:text-center md:place-items-center">
+          <span className="lg:text-6xl text-3xl font-bold">{name}</span>
+          <span className="lg:text-xl text-sm">{subtitle}</span>
         </div>
-        <span className="lg:text-8xl text-2xl  font-bold text-center">
+        <span className="lg:text-8xl text-5xl font-bold text-center">
           {number}
         </span>
       </div>
