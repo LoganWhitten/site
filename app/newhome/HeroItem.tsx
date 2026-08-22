@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Dispatch, SetStateAction, useState } from "react";
+import React, { Dispatch, SetStateAction, useState } from "react";
 
 export default function HeroItem({
+  children,
   name,
   subtitle,
+  title,
   number,
   img,
   gallery,
@@ -18,6 +20,8 @@ export default function HeroItem({
   number: string;
   img: string;
   id: number;
+  title:string;
+  children: React.ReactNode;
   gallery: [string];
   setActive: Dispatch<SetStateAction<number>>;
   activeTab: number;
@@ -50,12 +54,13 @@ export default function HeroItem({
         className={`transition-all ease-in-out gap-4 flex flex-col duration-500 min-h-0 ${activeTab == id ? "border-t border-dashed block opacity-100" : "hidden opacity-0"}`}
       >
         <div className="shrink-0 lg:h-32 h-48 place-content-center flex flex-col">
-          <p className="lg:text-4xl text-2xl">Writeup Coming Soon... </p>
+          <p className="lg:text-4xl text-2xl">
+            {title}
+          </p>
           <div className="flex place flex-col lg:text-xl text-lg overflow-auto">
+            {children}
          </div>
         </div>
-        {
-          /*
           <div className="min-h-0 pb-2 flex-1 flex  overflow-scroll overflow-y-hidden place-items-center gap-8">
             {gallery.map((name, id) => (
               <img
@@ -65,8 +70,6 @@ export default function HeroItem({
               />
             ))}
           </div>
-          */
-        }
       </div>
     </div>
   );
