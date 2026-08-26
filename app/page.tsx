@@ -13,7 +13,7 @@ export default function NewHome() {
           title="Design & Production | UNC School of the Arts"
           subtitle="Production Electrician, ETC EOS, Grandma3."
           number="'27"
-          gallery={["/images/integration.jpeg"]}
+          gallery={["/images/school.jpeg"]}
           img="/images/school.jpeg"
           activeTab={activeTab}
           setActive={setActive}
@@ -66,7 +66,7 @@ export default function NewHome() {
         <HeroItem
           name="Illuminated Integration"
           title="Systems Integrator Intern"
-          gallery={["/images/integration.jpeg"]}
+          gallery={["/images/coaster.jpg"]}
           subtitle="Q-Sys Plugin Development, Cisco Networking."
           number="'25"
           img="/images/coaster.jpg"
@@ -92,7 +92,7 @@ export default function NewHome() {
         <HeroItem
           name="Side Projects"
           title="Portfolio Website"
-          gallery={["/images/integration.jpeg"]}
+          gallery={["/images/boom.jpeg"]}
           subtitle="Website/App Development, Brand Management."
           number=""
           img="/images/boom.jpeg"
