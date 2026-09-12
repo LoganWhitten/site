@@ -33,7 +33,7 @@ export default function NewHome() {
           gallery={["/images/integration.jpeg"]}
           subtitle="Q-Sys Plugin Development, Cisco Networking."
           number="'25"
-          img="/images/coaster.jpg"
+          img="/images/integration.jpeg"
           activeTab={activeTab}
           setActive={setActive}
           id={2}
