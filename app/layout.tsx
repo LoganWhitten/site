@@ -23,7 +23,7 @@ export default function RootLayout({
      <html
       lang="en"
     >
-      <body className='bg-black'>
+      <body className='bg-[#1b1b1b]'>
         <HeroHeader />
             <div className="pt-5 grid place-content-center">
             {children}
