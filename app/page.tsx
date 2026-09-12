@@ -38,6 +38,13 @@ export default function Home() {
             >
               <img id="socialIcon" src="/images/linkedin.svg" />
             </a>
+            <a
+              href="/resume.pdf"
+              className="animate-[fadeInSuperDelay_2.5s_ease-in-out] text-xs place-content-center"
+              target="_blank"
+            >
+              Resume
+            </a>
           </div>
         </h1>
         <img id="headerImg" src="/images/me.png" alt="Logan Whitten" />
@@ -69,23 +76,16 @@ export default function Home() {
           </p>
           <br />
           <p>
-            Currently I'm interning at
+            This summer I interned at
             <a href="/mls">
-                <ColorText>Murphy Lighting Systems </ColorText>
+              <ColorText>Murphy Lighting Systems </ColorText>
             </a>
-            where I've had the opportunity to work on projects for
-            <a target="_blank" href="https://www.royalcaribbean.com">
-              <ColorText>Royal Carribean</ColorText>
-            </a>
-            ,
-            <a target="_blank" href="https://www.udx.com/en/us">
-              <ColorText>Universal Destinations & Experiences</ColorText>
-            </a>
-            ,
-            <a target="_blank" href="https://www.delawarenorth.com/">
-              <ColorText>Kennedy Space Center </ColorText>
-            </a>
-            and more.
+            where I was able to contribute to large-scale{" "}
+            <ColorText>themed entertainment </ColorText>
+            projects in various stages of the pipeline from early mockup
+            <ColorText>programming</ColorText> to on-site{" "}
+            <ColorText> installation </ColorText> and{" "}
+            <ColorText> commissioning </ColorText>.
           </p>
           <br />
           <p>
@@ -107,8 +107,9 @@ export default function Home() {
               <div id="projectInfoDiv">
                 <p className=" text-lg">This Site</p>
                 <p className="text-xs">
-                  Next.JS containerized and running on a Raspberry PI. Built
-                  from scratch using no AI.
+                  Programmed from scratch, with a custom continuous integration
+                  pipeline to host it on my server at home. Source code
+                  available on my Github. No AI.
                 </p>
               </div>
               <p id="projectProgress">
