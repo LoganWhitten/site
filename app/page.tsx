@@ -39,7 +39,7 @@ export default function Home() {
               <img id="socialIcon" src="/images/linkedin.svg" />
             </a>
             <a
-              href="/resume.pdf"
+              href="/Resume.pdf"
               className="animate-[fadeInSuperDelay_2.5s_ease-in-out] text-xs place-content-center"
               target="_blank"
             >
