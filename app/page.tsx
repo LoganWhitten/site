@@ -40,10 +40,10 @@ export default function Home() {
             </a>
             <a
               href="/Resume.pdf"
-              className="animate-[fadeInSuperDelay_2.5s_ease-in-out] text-xs place-content-center"
+              className="flex animate-[fadeInSuperDelay_2.5s_ease-in-out] text-xs place-content-center"
               target="_blank"
             >
-              Resume
+                            <img id="socialIcon" src="/images/paperclip.svg" />
             </a>
           </div>
         </h1>
